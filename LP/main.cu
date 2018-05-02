@@ -159,35 +159,35 @@ __device__ int compress(int input_data, int *compArr) {
 ////////////////////////////////////
 //Linear program auxillaries
 
-/*
-* Calculates t_left and t_right
-*
-* @radius: circular artificial constraint to form a bound problem
-* @line: 4 variables describing a straight line of form .x & .y = direction .z & .w = position
-* @t 2 variables to store resultant t_left and t_right of this calculation
-*/
-__device__ bool linearProgram1Disc(const float radius, const float4 line, float2 *t)
-{
-	/*glm::vec2 lines_direction_lineNo = glm::vec2(line.x, line.y);
-	glm::vec2 lines_point_lineNo = glm::vec2(line.z, line.w);
-
-	const float dotProduct = glm::dot(lines_point_lineNo, lines_direction_lineNo);
-	const float discriminant = sqr(dotProduct) + sqr(radius) - absSq(lines_point_lineNo);
-
-	if (discriminant < 0.0f) {
-		// Max speed circle fully invalidates line lineNo.
-		return false;
-	}*/
-
-	//float tLeft = -dotProduct - std::sqrt(discriminant);
-	//float tRight = -dotProduct + std::sqrt(discriminant);
-	float tLeft = -INT_MAX;
-	float tRight = INT_MAX;
-
-	*t = make_float2(tLeft, tRight);
-
-	return true;
-}
+// /*
+// * Calculates t_left and t_right
+// *
+// * @radius: circular artificial constraint to form a bound problem
+// * @line: 4 variables describing a straight line of form .x & .y = direction .z & .w = position
+// * @t 2 variables to store resultant t_left and t_right of this calculation
+// */
+// __device__ bool linearProgram1Disc(const float radius, const float4 line, float2 *t)
+// {
+// 	/*glm::vec2 lines_direction_lineNo = glm::vec2(line.x, line.y);
+// 	glm::vec2 lines_point_lineNo = glm::vec2(line.z, line.w);
+//
+// 	const float dotProduct = glm::dot(lines_point_lineNo, lines_direction_lineNo);
+// 	const float discriminant = sqr(dotProduct) + sqr(radius) - absSq(lines_point_lineNo);
+//
+// 	if (discriminant < 0.0f) {
+// 		// Max speed circle fully invalidates line lineNo.
+// 		return false;
+// 	}*/
+//
+// 	//float tLeft = -dotProduct - std::sqrt(discriminant);
+// 	//float tRight = -dotProduct + std::sqrt(discriminant);
+// 	float tLeft = -INT_MAX;
+// 	float tRight = INT_MAX;
+//
+// 	*t = make_float2(tLeft, tRight);
+//
+// 	return true;
+// }
 
 /*
 *
@@ -267,17 +267,9 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 	if (tid == 0) {
 		active_agents = (batches < (blockIdx.x * blockDim.x)) ? (batches % blockDim.x) : blockDim.x;
 	}
-
-
-
-
+    //sync sm data
 	__syncthreads();
 
-
-
-
-	//Threads with data can compute
-	//int thread_data = (index < batches) ? 1 : 0;
 
 	//loop through all lines in the batch and set per loop variables
 	for (int i = 0; i < size; i++, s_t[tid] = make_float2(-INT_MAX, INT_MAX)) {
@@ -477,6 +469,205 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+//the older, unimproved version of the LP solver
+__global__ void oldlpsolve(const float4 * const lines, glm::vec2 *output, const int batches, const int size, const glm::vec2* const objective_function) {
+	//thread index
+	const int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+
+	//whether to minimise or maximise objective function
+	enum optimisation optimiseFunc = MAXIMISE;
+
+	//Initialise variables
+	glm::vec2 s_desv = objective_function[index]; //initialise position to be closest to / arguments of the objective function
+	glm::vec2 s_newv = (float)INT_MAX * glm::normalize(objective_function[index]) * ((optimiseFunc == MAXIMISE) ? 1.0f : -1.0f); //starting value guess. Choosen as to maximise/minimise objective function
+    float4 s_line = make_float4(0,0,0,0);
+	int s_lineFail = -1; //initialise success integer
+	float2 s_t = make_float2(-INT_MAX, INT_MAX);
+
+
+	//loop through all lines in the batch and set per loop variables
+	for (int i = 0; i < size; i++, s_t = make_float2(-INT_MAX, INT_MAX)) {
+
+
+		//Write line info for this iteration into SM
+		if (index < batches) {
+			s_line = lines[(index*size) + i];
+		}
+
+		//Whether this thread is performing computation (1). Needs to be integer due to block level operations
+		int bthread_data = (index < batches) ? 1 : 0;
+		//early out if out of range
+		if (s_lineFail != -1)
+			bthread_data = 0;
+
+		if (bthread_data == 1) {
+			//check if newVel is satisfied by the constraint line. 1 if not satisfied and requires work, otherwise 0.
+			bthread_data = (int)(det(glm::vec2(s_line.x, s_line.y), glm::vec2(s_line.z, s_line.w) - s_newv) > 0.0f); //issues on this line
+		}
+
+
+        //if requiring recomputation
+        if(bthread_data == 1){
+            for(int line_index=0;line_index<i;line_index++){
+
+                float4 lines_i = lines[(index*size) + line_index];
+
+
+                //calculate denominator and numerator
+				bool btleft;//whether the t value is left (or right if false)
+				float t;//value of t
+				if (!linearProgram1Fractions(s_line, lines_i, s_t, &t, &btleft)) {
+					//operation failed
+					s_lineFail = i;
+				}
+
+				//atomic write tleft and tright to shared memory using an atomic min and max
+				if (btleft) {
+                    s_t.x = (s_t.x < t) ? t : s_t.x; //max
+				}
+				else {
+                    s_t.y = (s_t.y > t) ? t : s_t.x; //min
+				}
+
+
+                //failure condition if no region of validity
+                if (s_t.x > s_t.y) {
+                    s_lineFail = i;
+                }
+
+                //If not failed up to this point
+                if (s_lineFail == -1) {
+
+                    // Optimize closest point
+                    glm::vec2 lineDir = glm::vec2(s_line.x, s_line.y);
+                    glm::vec2 linePoint = glm::vec2(s_line.z, s_line.w);
+                    //Change this line to alter the functional form of the optimisation function
+#ifdef OBJECTIVE_DISTANCE
+                    //for case of minimising distance to point @s_desv
+                    const float t = glm::dot(lineDir, s_desv - linePoint);
+
+                    //best value is to the left of what is allowed
+                    if (t < s_t.x) {
+                        s_newv = linePoint + s_t.x * lineDir;
+                    }
+                    //best value is to the right of what is allowed
+                    else if (t > s_t.y) {
+                        s_newv = linePoint + s_t.y * lineDir;
+                    }
+                    //best value is not on a vertex
+                    else {
+                        s_newv = linePoint + t * lineDir;
+                    }
+#else
+                    //for case of minimising linear function
+                    //solution is guaranteed to be either on vertex of t_left or right, or along the line joining them (in which case the precise choise does not matter)
+
+                    //the objective function
+                    glm::vec2 fct = s_desv;
+
+
+                    glm::vec2 t_left_sln = linePoint + s_t.x * lineDir; //x,y value at t_left
+                    float t_left_val = glm::dot(fct, t_left_sln); //value of objective function at t_left
+                    //value of function at t_right
+                    glm::vec2 t_right_sln = linePoint + s_t.y * lineDir; //x,y value at t_right
+                    float t_right_val = glm::dot(fct, t_right_sln); //value of objective function at t_right
+                    //assign answer from correct t.
+                    s_newv = ((t_left_val > t_right_val) != (optimiseFunc == (MINIMISE))) ? t_left_sln : t_right_sln;
+
+#endif // OBJECTIVE_DISTANCE
+                }
+
+
+            }
+
+        }
+
+
+
+    }
+
+    //write to output
+	if (index < batches) {
+		output[index] = s_newv;
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //shared memory size calculator
 int lp_sm_size(int blockSize) {
 	int sm_size = sizeof(int) * blockSize +
@@ -532,12 +723,13 @@ int main(int argc, const char* argv[])
 	}
 	//Input is randomly generated
 	else if (randOrBenchmark == 2) {
-		size = atoi(argv[1]);
+        printf("random generation not supported...\n ");
+		//size = atoi(argv[1]);
 
-		printf("Creating random LP\tBatches: %i lpSize %i\n", batches, size);
+		//printf("Creating random LP\tBatches: %i lpSize %i\n", batches, size);
 
 		//Generate the LP randomly
-		generateRandomLP(&constraintsSingle, &optimiseSingle, size);
+		//generateRandomLP(&constraintsSingle, &optimiseSingle, size);
 
 		//write generated LP to file
 
@@ -549,9 +741,9 @@ int main(int argc, const char* argv[])
 
 
 	//------------------------------------------
-	//initialize timing5
+	//initialize memory initialsation timings
 	cudaEvent_t start, stop;
-	float milliseconds = 0;
+	float memory_milliseconds = 0;
 	cudaEventCreate(&start);
 	cudaEventCreate(&stop);
 	//start time
@@ -559,8 +751,6 @@ int main(int argc, const char* argv[])
 
 	//------------------------------------------
 	//memory allocation
-
-	//Check device memory will not be exceeded... TODO
 
 	gpuErrchk(cudaMallocManaged(&output, sizeof(glm::vec2) * batches));
 	gpuErrchk(cudaMallocManaged(&constraints, sizeof(float4) * batches * size));
@@ -577,13 +767,12 @@ int main(int argc, const char* argv[])
 		optimise[i] = optimiseSingle;
 	}
 
+    //end time
+	cudaEventRecord(stop);
+	cudaEventSynchronize(stop);
+	cudaEventElapsedTime(&memory_milliseconds, start, stop);
+	printf("Memory processing time: %f (ms)\n", memory_milliseconds);
 
-	//------------------------------------------
-	//Write to files
-	//writeLPtoFiles(lines);
-
-	//------------------------------------------
-	//Data copy
 
 	//------------------------------------------
 	//Initialize kernel
@@ -597,7 +786,16 @@ int main(int argc, const char* argv[])
 	//int blockSizeLimit = 1024;
 	//gpuErrchk(cudaOccupancyMaxPotentialBlockSizeVariableSMem(&minGridSize, &blockSize, lpsolve, lp_sm_size, blockSizeLimit));
 
+    //run it once so actual timing kernel does not include excess overhead
+    lpsolve <<< g, b >>>(constraints, output, batches, size, optimise);
 
+    //------------------------------------------
+	//initialize timings
+	float milliseconds = 0;
+	//cudaEventCreate(&start);
+	//cudaEventCreate(&stop);
+	//start time
+	cudaEventRecord(start);
 
 	//------------------------------------------
 	//Kernel execution
@@ -610,7 +808,7 @@ int main(int argc, const char* argv[])
 	cudaEventRecord(stop);
 	cudaEventSynchronize(stop);
 	cudaEventElapsedTime(&milliseconds, start, stop);
-	printf("Total Processing time: %f (ms)\n", milliseconds);
+	printf("Kernel Processing time: %f (ms)\n", milliseconds);
 
 	cudaDeviceSynchronize();
 
@@ -623,10 +821,40 @@ int main(int argc, const char* argv[])
 		printf("Batch %i \t Optimal location is x: %f y: %f \t value of %f\n", i, output[i].x, output[i].y, glm::dot(optimise[i], output[i]) );
 	}
 
-
-	//------------------------------------------
+    //------------------------------------------
 	//write timing to file
-	writeTimingtoFile("/home/john/Documents/RGBLP/timings.txt", size, batches, milliseconds);
+	writeTimingtoFile("/home/john/Documents/RGBLP/timingsNew.txt", size, batches, memory_milliseconds+milliseconds);
+
+//check old implementation performance
+#define oldLP 1
+#ifdef oldLP
+    //start time
+	cudaEventRecord(start);
+
+    //kernel
+	oldlpsolve <<< g, b >>>(constraints, output, batches, size, optimise);
+
+	//end time
+	cudaEventRecord(stop);
+	cudaEventSynchronize(stop);
+	cudaEventElapsedTime(&milliseconds, start, stop);
+	printf("Old kernel time for old LP: %f (ms)\n", milliseconds);
+
+	cudaDeviceSynchronize();
+
+    //------------------------------------------
+	//results to cpu
+	for (int i = 0; i < numResultsToPrint; i++) {
+		printf("OLD LP: Batch %i \t Optimal location is x: %f y: %f \t value of %f\n", i, output[i].x, output[i].y, glm::dot(optimise[i], output[i]) );
+	}
+
+    //------------------------------------------
+	//write timing to file
+	writeTimingtoFile("/home/john/Documents/RGBLP/timingsOld.txt", size, batches, memory_milliseconds+milliseconds);
+
+#endif //oldLP
+
+
 
 
 	//------------------------------------------
