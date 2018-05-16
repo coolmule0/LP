@@ -16,10 +16,13 @@
 #define maxSpeed_ 100000000000 // large artificial circular constraint
 #define RVO_EPSILON 0.00001f //something close to zero
 
-//int batches = 1024, size = 128;
-
-//number of threads in a block. Must be a multiple of 32!
-#define BlockDimSize 256
+#define VARBLOCKSIZE 1
+#ifdef VARBLOCKSIZE
+	int BlockDimSize = -1;
+#else
+	//number of threads in a block. Must be a multiple of 32!
+	#define BlockDimSize 128
+#endif
 
 //enum for min max
 enum optimisation { MINIMISE, MAXIMISE };
@@ -89,7 +92,7 @@ __device__ static float atomicMin(float* address, float val)
 * not valid for block size greater than 1024 (32*32)
 */
 __device__ int reduce(int input_data) {
-	__shared__ int s_ballot_results[BlockDimSize >> 5]; //shared results of the ballots
+	/*__shared__ int s_ballot_results[BlockDimSize >> 5]; //shared results of the ballots
 	int int_ret = 0; //value to return, only non zero for (threadIdx.x = 0)
 
 	s_ballot_results[threadIdx.x >> 5] = ballot(input_data);
@@ -105,7 +108,7 @@ __device__ int reduce(int input_data) {
 	}
 	if (threadIdx.x == 0)
 		int_ret = blockCompNum;
-	return int_ret;
+	return int_ret;*/
 }
 
 /** \brief compresses the thread varaible input_data using warp shuffles
@@ -115,7 +118,7 @@ __device__ int reduce(int input_data) {
 */
 __device__ int compress(int input_data, int *compArr) {
 
-	const int tid = threadIdx.x;
+	/*const int tid = threadIdx.x;
 	__shared__ int temp[BlockDimSize >> 5]; //stores warp scan results shared
 	int int_ret; //value to return
 
@@ -149,7 +152,7 @@ __device__ int compress(int input_data, int *compArr) {
 	//get total number - reduction
 	int_ret = reduce(input_data);
 
-	return int_ret;
+	return int_ret;*/
 }
 
 
@@ -245,6 +248,50 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 	const int index = (blockIdx.x * blockDim.x) + threadIdx.x;
 	const int tid = threadIdx.x;
 
+#ifdef VARBLOCKSIZE
+	extern __shared__ char smarray[];
+
+	size_t ars = 0;//counter of how far along the shared array different data should point
+
+	int *compArr = (int *)smarray; //shared compressed array working list
+	//ars += sizeof(int)*blockDim.x;
+	int *active_agents = &(compArr[blockDim.x]); //shared number of threads in block that are in the active compression
+	//ars += sizeof(int);
+	float4 *s_line = (float4*)&(active_agents[1]); //shared current orca line of interest x:direction.x y:direction.y z:point.x w:point.y
+	//ars += sizeof(float4) * blockDim.x;
+	float2 *s_t = (float2*)&(s_line[blockDim.x]); //tleft and tright shared
+	//ars += sizeof(float2) * blockDim.x;
+	int *s_lineFail= (int*)&(s_t[blockDim.x]); //on which neighbour number the lp has failed shared. -1 if succeeded
+	//ars += sizeof(int) * blockDim.x;
+	glm::vec2 *s_newv = (glm::vec2*)&(s_lineFail[blockDim.x]); //solution
+	//ars += sizeof(glm::vec2) * blockDim.x;
+	glm::vec2 *s_desv = &(s_newv[blockDim.x]); //position to be closest to/value that optimises objective function
+	//ars += sizeof(glm::vec2) * blockDim.x;//ars should now be at end of array size
+
+	//test writes
+	if(index == 0){
+		for(int i = 0; i<blockDim.x; i++){
+			compArr[i] = i;
+			s_line[i] = make_float4(i,i,i,i);
+			s_t[i] = make_float2(i,i);
+			s_lineFail[i] = i;
+			s_newv[i] = glm::vec2(i,i);
+			s_desv[i] = glm::vec2(i,i);
+		}
+		for(int i = 0; i<blockDim.x; i++){
+			printf("\n");
+			printf("%i",compArr[i]);
+			printf("%i",s_line[i]);
+			//s_t[i] = make_float2(i,i);
+			//s_lineFail[i] = i;
+			//s_newv[i] = glm::vec2(i,i);
+			//s_desv[i] = glm::vec2(i,i);
+			printf("\n");
+		}
+	}
+
+
+#else
 	//initialize SM
 	__shared__ int compArr[BlockDimSize]; //shared compressed array working list
 	__shared__ int active_agents; //shared number of threads in block that are in the active compression
@@ -253,7 +300,7 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 	__shared__ int s_lineFail[BlockDimSize]; //on which neighbour number the lp has failed shared. -1 if succeeded
 	__shared__ glm::vec2 s_newv[BlockDimSize]; //solution
 	__shared__ glm::vec2 s_desv[BlockDimSize]; //position to be closest to/value that optimises objective function
-
+#endif
 	//whether to minimise or maximise objective function
 	enum optimisation optimiseFunc = MAXIMISE;
 
@@ -265,20 +312,14 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 
 	//number of starting agents = all possible threads in block
 	if (tid == 0) {
-		active_agents = (batches < (blockIdx.x * blockDim.x)) ? (batches % blockDim.x) : blockDim.x;
+		(*active_agents) = (batches < (blockIdx.x * blockDim.x)) ? (batches % blockDim.x) : blockDim.x;
 	}
     //sync sm data
-	__syncthreads();
+	//__syncthreads();
 
 
 	//loop through all lines in the batch and set per loop variables
 	for (int i = 0; i < size; i++, s_t[tid] = make_float2(-INT_MAX, INT_MAX)) {
-
-
-		//Write line info for this iteration into SM
-		if (index < batches) {
-			s_line[tid] = lines[(index*size) + i];
-		}
 
 		//Whether this thread is performing computation (1). Needs to be integer due to block level operations
 		int bthread_data = (index < batches) ? 1 : 0;
@@ -287,6 +328,9 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 			bthread_data = 0;
 
 		if (bthread_data == 1) {
+			//Write line info for this iteration into SM
+			s_line[tid] = lines[(index*size) + i];
+
 			//check if newVel is satisfied by the constraint line. 1 if not satisfied and requires work, otherwise 0.
 			bthread_data = (int)(det(glm::vec2(s_line[tid].x, s_line[tid].y), glm::vec2(s_line[tid].z, s_line[tid].w) - s_newv[tid]) > 0.0f); //issues on this line
 		}
@@ -297,10 +341,13 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 		int result = compress(bthread_data, compArr);
 		//result written to thread0
 		if (tid == 0) {
-			active_agents = result;
+			(*active_agents) = result;
 			//if (result == 0)
 			//	break;
 		}
+
+		//For compArr to be filled properly
+		__syncthreads();
 
 #ifdef printInfo
 		//thread to examine
@@ -320,27 +367,11 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 #endif
 #endif
 
-		//For compArr to be filled properly
-		__syncthreads();
-
-
-		/*//threads too high are ignored
-		if (tid < active_agents) {
-			//Get new index
-			int n_tid = compArr[tid];
-
-			//calculate tleft and tright and save in shared memory
-			s_t[n_tid] = make_float2(-INT_MAX, INT_MAX);
-		}
-
-
-		__syncthreads();*/
-
 		//calculate the total number of work unit items (where a work unit is a line read and calculation for a unqiue agent line index). i.e.
-		int wu_count = (active_agents * i);
+		int wu_count = ((*active_agents) * i);
 
 		//divide work unit items between threads. i.e.
-		for (int j = 0; j < wu_count; j += BlockDimSize) {
+		for (int j = 0; j < wu_count; j += blockDim.x) {
 
 			//calculate unique work unit index
 			int wu_index = j + tid;
@@ -355,10 +386,8 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 				int line_index = wu_index % i;
 
 				//read in the unique agent line combination using the calculated indices
-				float4 lines_i;
-				//lines_i = get_pedestrian_agent_array_value<const float4>(&(agents->projLine[n_tid + blockIdx.x*blockDim.x]), line_index);
 				int newIndex = n_tid + blockIdx.x*blockDim.x;
-				lines_i = lines[(newIndex*size) + line_index];
+				float4 lines_i = lines[(newIndex*size) + line_index];
 
 				//calculate denominator and numerator
 				bool btleft;//whether the t value is left (or right if false)
@@ -382,7 +411,7 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 		__syncthreads();
 
 		//update the new velocity for each active agent
-		if (tid < active_agents) {
+		if (tid < (*active_agents)) {
 
 			//New index
 			int n_tid = compArr[tid];
@@ -657,26 +686,16 @@ __global__ void oldlpsolve(const float4 * const lines, glm::vec2 *output, const 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 //shared memory size calculator
 int lp_sm_size(int blockSize) {
-	int sm_size = sizeof(int) * blockSize +
-		sizeof(int) +
-		sizeof(float4) * blockSize +
-		sizeof(float2) * blockSize +
-		sizeof(int) * blockSize +
-		sizeof(glm::vec2) * blockSize +
-		sizeof(glm::vec2) * blockSize;
+	int sm_size = sizeof(int) * blockSize + //compArr
+		sizeof(int) +	//active_agents
+		sizeof(float4) * blockSize +	//s_line
+		sizeof(float2) * blockSize + //s_t
+		sizeof(int) * blockSize +	//s_lineFail
+		sizeof(glm::vec2) * blockSize +	//s_newv
+		sizeof(glm::vec2) * blockSize +//s_dev
+		sizeof(int) * (blockSize >> 5) * 2;	//compress and reduce sm
 
 	return sm_size;
 }
@@ -782,18 +801,18 @@ int main(int argc, const char* argv[])
 	b.x = blockSize;
 	g.x = gridSize;
 
-	//int minGridSize;
-	//int blockSizeLimit = 1024;
-	//gpuErrchk(cudaOccupancyMaxPotentialBlockSizeVariableSMem(&minGridSize, &blockSize, lpsolve, lp_sm_size, blockSizeLimit));
+	int minGridSize;
+	int blockSizeLimit = 1024;
+	gpuErrchk(cudaOccupancyMaxPotentialBlockSizeVariableSMem(&minGridSize, &blockSize, lpsolve, lp_sm_size, blockSizeLimit));
+	gridSize = (batches + blockSize - 1) / blockSize;
+	printf("current b,g: %i %i\t recomended b,g: %i %i\t and sm size %i\n",b.x,g.x,blockSize,gridSize, lp_sm_size(blockSize));
 
     //run it once so actual timing kernel does not include excess overhead
-    lpsolve <<< g, b >>>(constraints, output, batches, size, optimise);
+    lpsolve <<< gridSize, blockSize, lp_sm_size(blockSize)>>>(constraints, output, batches, size, optimise);
 
     //------------------------------------------
 	//initialize timings
 	float milliseconds = 0;
-	//cudaEventCreate(&start);
-	//cudaEventCreate(&stop);
 	//start time
 	cudaEventRecord(start);
 
