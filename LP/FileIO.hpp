@@ -19,11 +19,12 @@
 * Read in line constraint information from file and write data to newly malloced @ORCA_line
 * Reads in data for 1 LP
 *
+* @filename: name of file to read in data from, from benchmarks folder
 * @ORCA_line: array which will be allocated CPU memory and contain constraint data
 * @optimisation: 2D objective function variables to minimise over.
 * @size: number of constraints
 */
-bool parseBenchmark(float4** ORCA_line, glm::vec2 *optimisation, int *size);
+bool parseBenchmark(std::string filename, float4** ORCA_line, glm::vec2 *optimisation, int *size);
 
 
 /*

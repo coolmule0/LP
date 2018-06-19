@@ -16,7 +16,8 @@
 #define maxSpeed_ 100000000000 // large artificial circular constraint
 #define RVO_EPSILON 0.00001f //something close to zero
 
-#define VARBLOCKSIZE 1
+//#define VARBLOCKSIZE 1
+#define printInfo
 #ifdef VARBLOCKSIZE
 	int BlockDimSize = -1;
 #else
@@ -92,7 +93,7 @@ __device__ static float atomicMin(float* address, float val)
 * not valid for block size greater than 1024 (32*32)
 */
 __device__ int reduce(int input_data) {
-	/*__shared__ int s_ballot_results[BlockDimSize >> 5]; //shared results of the ballots
+	__shared__ int s_ballot_results[BlockDimSize >> 5]; //shared results of the ballots
 	int int_ret = 0; //value to return, only non zero for (threadIdx.x = 0)
 
 	s_ballot_results[threadIdx.x >> 5] = ballot(input_data);
@@ -108,7 +109,7 @@ __device__ int reduce(int input_data) {
 	}
 	if (threadIdx.x == 0)
 		int_ret = blockCompNum;
-	return int_ret;*/
+	return int_ret;
 }
 
 /** \brief compresses the thread varaible input_data using warp shuffles
@@ -118,7 +119,7 @@ __device__ int reduce(int input_data) {
 */
 __device__ int compress(int input_data, int *compArr) {
 
-	/*const int tid = threadIdx.x;
+	const int tid = threadIdx.x;
 	__shared__ int temp[BlockDimSize >> 5]; //stores warp scan results shared
 	int int_ret; //value to return
 
@@ -152,7 +153,7 @@ __device__ int compress(int input_data, int *compArr) {
 	//get total number - reduction
 	int_ret = reduce(input_data);
 
-	return int_ret;*/
+	return int_ret;
 }
 
 
@@ -251,22 +252,13 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 #ifdef VARBLOCKSIZE
 	extern __shared__ char smarray[];
 
-	size_t ars = 0;//counter of how far along the shared array different data should point
-
 	int *compArr = (int *)smarray; //shared compressed array working list
-	//ars += sizeof(int)*blockDim.x;
 	int *active_agents = &(compArr[blockDim.x]); //shared number of threads in block that are in the active compression
-	//ars += sizeof(int);
 	float4 *s_line = (float4*)&(active_agents[1]); //shared current orca line of interest x:direction.x y:direction.y z:point.x w:point.y
-	//ars += sizeof(float4) * blockDim.x;
 	float2 *s_t = (float2*)&(s_line[blockDim.x]); //tleft and tright shared
-	//ars += sizeof(float2) * blockDim.x;
 	int *s_lineFail= (int*)&(s_t[blockDim.x]); //on which neighbour number the lp has failed shared. -1 if succeeded
-	//ars += sizeof(int) * blockDim.x;
 	glm::vec2 *s_newv = (glm::vec2*)&(s_lineFail[blockDim.x]); //solution
-	//ars += sizeof(glm::vec2) * blockDim.x;
 	glm::vec2 *s_desv = &(s_newv[blockDim.x]); //position to be closest to/value that optimises objective function
-	//ars += sizeof(glm::vec2) * blockDim.x;//ars should now be at end of array size
 
 	//test writes
 	if(index == 0){
@@ -294,7 +286,7 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 #else
 	//initialize SM
 	__shared__ int compArr[BlockDimSize]; //shared compressed array working list
-	__shared__ int active_agents; //shared number of threads in block that are in the active compression
+	__shared__ int active_agents[1]; //shared number of threads in block that are in the active compression
 	__shared__ float4 s_line[BlockDimSize]; //shared current orca line of interest x:direction.x y:direction.y z:point.x w:point.y
 	__shared__ float2 s_t[BlockDimSize]; //tleft and tright shared
 	__shared__ int s_lineFail[BlockDimSize]; //on which neighbour number the lp has failed shared. -1 if succeeded
@@ -336,7 +328,6 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 		}
 
 
-
 		//compress through exclusive scan
 		int result = compress(bthread_data, compArr);
 		//result written to thread0
@@ -350,21 +341,24 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 		__syncthreads();
 
 #ifdef printInfo
-		//thread to examine
-#define tte 0
-		if (index == 0) {
+		//index to examine
+#define ite 0
+		if (index == ite) {
 			printf("---------------------------\niteration %d\n", i);
 		}
 		//if (active_agents != 0 && tid == 0){
 		//	printf("Block %i active threads %d\n", blockIdx.x, result);
 		//}
-#ifdef tte
-		if (tte == index) {
-			if (thread_data == 1) {
-				printf("index: %i, s_line x: %5.3f y: %5.3f z: %5.3f w:%5.3f\n", index, s_line[tid].x, s_line[tid].y, s_line[tid].z, s_line[tid].w);
+		if (ite == index) {
+			printf("Current optimal value = (%5.3f, %5.3f)\n", s_newv[threadIdx.x].x, s_newv[threadIdx.x].y);
+			printf("Line being considered = (%5.3f, %5.3f)dir (%5.3f, %5.3f)point\n", s_line[threadIdx.x].x, s_line[threadIdx.x].y, s_line[threadIdx.x].z, s_line[threadIdx.x].w );
+			if (bthread_data) {
+				printf("Performing recomputation for this line\n");
+			}
+			else {
+				printf("No computation for this line needed\n");
 			}
 		}
-#endif
 #endif
 
 		//calculate the total number of work unit items (where a work unit is a line read and calculation for a unqiue agent line index). i.e.
@@ -395,6 +389,11 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 				if (!linearProgram1Fractions(s_line[n_tid], lines_i, s_t[n_tid], &t, &btleft)) {
 					//operation failed
 					s_lineFail[n_tid] = i;
+#ifdef printInfo
+					if (n_tid + blockDim.x * blockIdx.x == ite) {
+						printf("Computation failed, half-planes are parallel in wrong direction\n");
+					}
+#endif
 				}
 
 				//atomic write tleft and tright to shared memory using an atomic min and max
@@ -419,7 +418,11 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 			//failure condition if no region of validity
 			if (s_t[n_tid].x > s_t[n_tid].y) {
 				s_lineFail[n_tid] = i;
-				//printf("index %i failed\n", n_tid);
+#ifdef printInfo
+				if (n_tid + blockDim.x * blockIdx.x == ite) {
+					printf("Computation failed, no valid region\n");
+				}
+#endif
 			}
 
 			//If not failed up to this point
@@ -462,6 +465,12 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 				s_newv[n_tid] = ((t_left_val > t_right_val) != (optimiseFunc == (MINIMISE))) ? t_left_sln : t_right_sln;
 
 #endif // OBJECTIVE_DISTANCE
+
+#ifdef printInfo
+				if (n_tid + blockDim.x * blockIdx.x == ite) {
+					printf("New optimal value = (%5.3f, %5.3f)\n", s_newv[threadIdx.x].x, s_newv[threadIdx.x].y);
+				}
+#endif
 			}
 		}
 
@@ -720,43 +729,25 @@ int main(int argc, const char* argv[])
 	//------------------------------------------
 	//handle args
 	if (argc != 3) {
-		printf("\nIncorrect Number of Arguments!!!\n");
+		printf("\nIncorrect Number of Arguments!\n");
 		printf("Correct Usages/Syntax:\n");
-		printf("Argument 1) Benchmark-NO -- The Benchmark No or Random LP size\n");
+		printf("Argument 1) File-Name -- Name of input file in benchmarks folder. Cannot contain spaces\n");
 		printf("Argument 2) Batch-size -- Number of LPs to be solved\n");
 		return 1;
 	}
-	int randOrBenchmark = 1;
 	batches = atoi(argv[2]);
 
 	//------------------------------------------
 	//handle input
 
 	//Input is from file
-	if (randOrBenchmark == 1) {
-		printf("Parsing input files... ");
-		if(!parseBenchmark(&constraintsSingle, &optimiseSingle, &size)){
-			return 1;
-		}
-		printf("Done\n");
-	}
-	//Input is randomly generated
-	else if (randOrBenchmark == 2) {
-        printf("random generation not supported...\n ");
-		//size = atoi(argv[1]);
-
-		//printf("Creating random LP\tBatches: %i lpSize %i\n", batches, size);
-
-		//Generate the LP randomly
-		//generateRandomLP(&constraintsSingle, &optimiseSingle, size);
-
-		//write generated LP to file
-
-	}
-	else {
-		printf("Unexpected input for arg 3\n");
+	printf("Parsing input files... ");
+	if(!parseBenchmark(argv[1], &constraintsSingle, &optimiseSingle, &size)){
 		return 1;
 	}
+	printf("Done\n");
+	
+
 
 
 	//------------------------------------------
@@ -781,7 +772,7 @@ int main(int argc, const char* argv[])
 	//Tile LP data to all other LPs
 	for (int i = 0; i < batches; i++) {
 		for (int j = 0; j < size; j++) {
-			constraints[i*size + j] = constraintsSingle[j]; //deep copy constraint data (can shallow copy for better perf?)
+			constraints[i*size + j] = constraintsSingle[j]; //deep copy constraint data
 		}
 		optimise[i] = optimiseSingle;
 	}
@@ -801,14 +792,14 @@ int main(int argc, const char* argv[])
 	b.x = blockSize;
 	g.x = gridSize;
 
-	int minGridSize;
-	int blockSizeLimit = 1024;
-	gpuErrchk(cudaOccupancyMaxPotentialBlockSizeVariableSMem(&minGridSize, &blockSize, lpsolve, lp_sm_size, blockSizeLimit));
-	gridSize = (batches + blockSize - 1) / blockSize;
-	printf("current b,g: %i %i\t recomended b,g: %i %i\t and sm size %i\n",b.x,g.x,blockSize,gridSize, lp_sm_size(blockSize));
+	//int minGridSize;
+	//int blockSizeLimit = 1024;
+	//gpuErrchk(cudaOccupancyMaxPotentialBlockSizeVariableSMem(&minGridSize, &blockSize, lpsolve, lp_sm_size, blockSizeLimit));
+	//gridSize = (batches + blockSize - 1) / blockSize;
+	//printf("current b,g: %i %i\t recomended b,g: %i %i\t and sm size %i\n",b.x,g.x,blockSize,gridSize, lp_sm_size(blockSize));
 
     //run it once so actual timing kernel does not include excess overhead
-    lpsolve <<< gridSize, blockSize, lp_sm_size(blockSize)>>>(constraints, output, batches, size, optimise);
+    //lpsolve <<< gridSize, blockSize, lp_sm_size(blockSize)>>>(constraints, output, batches, size, optimise);
 
     //------------------------------------------
 	//initialize timings
@@ -834,7 +825,7 @@ int main(int argc, const char* argv[])
 
 
 	//------------------------------------------
-	//results to cpu
+	//print results to console
 	int numResultsToPrint = (batches < 1) ? batches : 1;
 	for (int i = 0; i < numResultsToPrint; i++) {
 		printf("Batch %i \t Optimal location is x: %f y: %f \t value of %f\n", i, output[i].x, output[i].y, glm::dot(optimise[i], output[i]) );
@@ -842,10 +833,10 @@ int main(int argc, const char* argv[])
 
     //------------------------------------------
 	//write timing to file
-	writeTimingtoFile("/home/john/Documents/RGBLP/timingsNew.txt", size, batches, memory_milliseconds+milliseconds);
+	writeTimingtoFile("timings/timingsNew.txt", size, batches, memory_milliseconds+milliseconds);
 
 //check old implementation performance
-#define oldLP 1
+//#define oldLP 1
 #ifdef oldLP
     //start time
 	cudaEventRecord(start);
@@ -863,9 +854,9 @@ int main(int argc, const char* argv[])
 
     //------------------------------------------
 	//results to cpu
-	for (int i = 0; i < numResultsToPrint; i++) {
+	/*for (int i = 0; i < numResultsToPrint; i++) {
 		printf("OLD LP: Batch %i \t Optimal location is x: %f y: %f \t value of %f\n", i, output[i].x, output[i].y, glm::dot(optimise[i], output[i]) );
-	}
+	}*/
 
     //------------------------------------------
 	//write timing to file

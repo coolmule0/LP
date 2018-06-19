@@ -4,10 +4,10 @@
 #include <string>
 
 #define PI 3.14159265358979323846264338327950
-
+//#define FILEIO_PRINT 1
 using namespace std;
 
-bool parseBenchmark(float4** constraints, glm::vec2 *optimisation, int *size) {
+bool parseBenchmark(string filename, float4** constraints, glm::vec2 *optimisation, int *size) {
 
 	//expects files of form:
 	//_A.txt	first line contain ("%i %i", number of constraints, dimensions = 2)
@@ -15,7 +15,10 @@ bool parseBenchmark(float4** constraints, glm::vec2 *optimisation, int *size) {
 	//B file	containing the appropriate value for B for above equation
 	//C file	containing objective function parameters x & y to MINIMIZE
 
-	char *fileA = "benchmarks/Test_A.txt"; char *fileB = "benchmarks/Test_B.txt"; char *fileC = "benchmarks/Test_C.txt";
+	//Organise filename input
+	string fileA = filename + "_A.txt"; string fileB = filename + "_B.txt"; string fileC = filename + "_C.txt";
+
+	//char *fileA = "benchmarks/Test_A.txt"; char *fileB = "benchmarks/Test_B.txt"; char *fileC = "benchmarks/Test_C.txt";
 	int dimTest; //check dimensions of input file
 	vector<glm::vec2> A; //values in A file
 	vector<float> b; //values in B file
@@ -25,7 +28,7 @@ bool parseBenchmark(float4** constraints, glm::vec2 *optimisation, int *size) {
 #ifdef FILEIO_PRINT
 	//print absolute path
 	char absPath[100];
-	_fullpath(absPath, fileA, 100);
+	_fullpath(absPath, fileA.c_str(), 100);
 	printf("Absolute path expected for file A is %s\n", absPath);
 #endif // FILEIO_PRINT
 
@@ -101,25 +104,25 @@ bool parseBenchmark(float4** constraints, glm::vec2 *optimisation, int *size) {
 * Converts line of form Ax < b to lineDir & linePoint (in @fourVar)
 */
 void convertLine3to4(float4 * fourVar, glm::vec2 A, float b) {
-	float ycomp = A.y;
-	float xcomp = A.x;
+	float xcomp = A.x; float ycomp = A.y;
 	float x_intc = 0; //does not exist to be read
 	float y_intc = b;
 
+	//4D line specifiers
 	float dirx, diry, pointx, pointy;
-	//vertical line
+	//horizontal line
 	if (ycomp == 0) {
-		diry = xcomp;
-		dirx = 0;
-		pointx = y_intc / xcomp;
-		pointy = 0;
+		diry = 0;
+		dirx = xcomp;
+		pointy = y_intc / xcomp;
+		pointx = 0;
 	}
 	//horizontal line
 	else if (xcomp == 0) {
-		diry = 0;
-		dirx = -ycomp;
-		pointx = 0;
-		pointy = y_intc / ycomp;
+		dirx = 0;
+		diry = -ycomp;
+		pointx = y_intc / ycomp;
+		pointy = 0;
 	}
 	//usual case
 	else {
