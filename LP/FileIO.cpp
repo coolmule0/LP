@@ -1,7 +1,10 @@
-#include "FileIO.hpp"
+#include "FileIO.h"
 #include <iostream>
 #include <fstream>
 #include <string>
+#ifdef __unix__
+#include <unistd.h>
+#endif //__unix__
 
 #define PI 3.14159265358979323846264338327950
 //#define FILEIO_PRINT 1
@@ -26,19 +29,27 @@ bool parseBenchmark(string filename, float4** constraints, glm::vec2 *optimisati
 	int counter = 0; //checks loop iterations
 
 #ifdef FILEIO_PRINT
+#ifdef _WIN32 || _WIN64
 	//print absolute path
 	char absPath[100];
 	_fullpath(absPath, fileA.c_str(), 100);
 	printf("Absolute path expected for file A is %s\n", absPath);
+#elif __unix__
+	char cwd[1024];
+	if (getcwd(cwd, sizeof(cwd)) != NULL)
+		 fprintf(stdout, "Current working dir: %s\n", cwd);
+ else
+		 perror("getcwd() error");
+#endif //__unix__ or windows
 #endif // FILEIO_PRINT
 
 
 	///////////////////////////////////////
 	//Read in from files
 	//File A
-	ifstream f(fileA);
+	ifstream f(fileA.c_str());
 	if (!f.is_open()) {
-		cout << "unable to open file A" << endl;
+		cout << "unable to open file " << fileA << endl;
 		return false;
 	}
 	//get number of constraints (in size) and double check file is in 2D
@@ -66,7 +77,7 @@ bool parseBenchmark(string filename, float4** constraints, glm::vec2 *optimisati
 	counter = 0; //reset counter;
 
 	//File B
-	f.open(fileB);
+	f.open(fileB.c_str());
 	if (!f.is_open()) {
 		cout << "unable to open file B" << endl;
 		return false;
@@ -82,7 +93,7 @@ bool parseBenchmark(string filename, float4** constraints, glm::vec2 *optimisati
 	counter = 0; //reset counter;
 
 	//File C
-	f.open(fileC);
+	f.open(fileC.c_str());
 	if (!f.is_open()) {
 		cout << "unable to open file C" << endl;
 		return false;
@@ -216,7 +227,7 @@ void writeLPtoFiles(float4 *h_lines, glm::vec2 optimisation, int size, const cha
 
 
 
-void generateRandomLP(float4** lines, glm::vec2* optimisation, const int size){
+/*void generateRandomLP(float4** lines, glm::vec2* optimisation, const int size){
 	//y-offset of line to solution approximated
 	float yOffset = 50;
 
@@ -272,7 +283,7 @@ void generateRandomLP(float4** lines, glm::vec2* optimisation, const int size){
 		//		printf("%i calculated incorrect\n", i);
 		//}
 	}
-}
+}*/
 
 
 int writeTimingtoFile(const char* const name, const int size, const int batches, const float time){

@@ -5,37 +5,21 @@
 #Cuda compiler nvcc
 NVCC = /usr/local/cuda-8.0/bin/nvcc
 #nvcc compiler arguments
-NVFLAGS = -arch=sm_52 -O3
+NVFLAGS = -O3 -gencode arch=compute_35,code=sm_35 -gencode arch=compute_50,code=sm_50 -gencode arch=compute_52,code=sm_52
+
+#build target executable
+MAIN = RGBLP
+#executable directory
+TARGETDIR = ../
+
 
 #Include directories
-INCLUDES = -I$(BOOSTDIR) -I$(GLPKDIR) -I$(LOCALDIR)
-#Library paths
-LFLAGS = -L$(BOOSTLINKEDDIR) -L$(GLPKLIBDIR)
-#Library files
-LIBS = -lboost_timer -lboost_chrono -lboost_system -lglpk
+INCLUDES = -I$(LOCALDIR)
 
 ##########
 #Includes
-#boost library include location
-BOOSTDIR=/home/john/Documents/codeLibraries/boost_1_65_1/
-#GLPK library include location
-GLPKDIR=/home/john/Documents/codeLibraries/glpk-4.65/src
 #Local library files
-LOCALDIR=/home/john/Documents/RGBLP/include
-
-#########
-#Libraries
-#boost linked libraries directory
-BOOSTLINKEDDIR=/home/john/Documents/codeLibraries/boost_1_65_1/stage/lib
-#GLPK library directory
-GLPKLIBDIR=/home/john/Documents/codeLibraries/glpk-4.65/lib
-#boost library names
-
-
-#build target executable
-MAIN = RGBSolve
-#executable directory
-TARGETDIR = /home/john/Documents/RGBLP
+LOCALDIR=../include
 
 #########
 #########
@@ -46,13 +30,13 @@ TARGETDIR = /home/john/Documents/RGBLP
 all: $(MAIN)
 
 $(MAIN): main.o FileIO.o
-	$(NVCC) $(NVFLAGS) $(INCLUDES) -o $(TARGETDIR)/$(MAIN) main.o FileIO.o $(LFLAGS) $(LIBS)
+	$(NVCC) $(NVFLAGS) $(INCLUDES) -o $(TARGETDIR)/$(MAIN) main.o FileIO.o
 
 main.o: main.cu
-	$(NVCC) $(NVFLAGS) $(INCLUDES) -o $@ -c $< $(LFLAGS) $(LIBS)
+	$(NVCC) $(NVFLAGS) $(INCLUDES) -o $@ -c $<
 
-FileIO.o: FileIO.cpp FileIO.hpp
-	$(NVCC) $(NVFLAGS) $(INCLUDES) -o $@ -c $< $(LFLAGS) $(LIBS)
+FileIO.o: FileIO.cpp FileIO.h
+	$(NVCC) $(NVFLAGS) $(INCLUDES) -o $@ -c $<
 
 clean:
-	rm -r main.o $(TARGETDIR)/$(MAIN)
+	rm main.o FileIO.o $(TARGETDIR)/$(MAIN)

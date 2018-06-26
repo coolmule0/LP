@@ -5,8 +5,8 @@
 #include <glm/glm.hpp>
 
 #include <vector>
-
-#include "Auxilary.h"
+#include <string>
+//#include "Auxilary.h"
 
 /*
 * Functions to read/write LP data
@@ -57,7 +57,7 @@ Valid  / *Invalid*
 	 / * * * * * *
 	/* * * * * * *
 */
-void generateRandomLP(float4** ORCA_line, glm::vec2* optimisation, const int size);
+//void generateRandomLP(float4** ORCA_line, glm::vec2* optimisation, const int size);
 
 /* Write time take in ms from @time with batch size @size and number of batches @batches to file @name
  *

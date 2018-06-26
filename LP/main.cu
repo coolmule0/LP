@@ -7,8 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "FileIO.hpp"
-//#include "Auxilary.h"
+#include "FileIO.h"
+#include "Auxilary.h"
 
 //Whether Objective function should should minimise distance to point, comment out for minimising linear function
 //#define OBJECTIVE_DISTANCE
@@ -746,7 +746,7 @@ int main(int argc, const char* argv[])
 		return 1;
 	}
 	printf("Done\n");
-	
+
 
 
 
