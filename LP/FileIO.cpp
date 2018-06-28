@@ -10,14 +10,12 @@
 //#define FILEIO_PRINT 1
 using namespace std;
 
+//expects files of form:
+//_A.txt	first line contain ("%i %i", number of constraints, dimensions = 2)
+//			rest of file containing equations of form A_i*x_i < B. i sums over dimensions
+//B file	containing the appropriate value for B for above equation
+//C file	containing objective function parameters x & y to MINIMIZE
 bool parseBenchmark(string filename, float4** constraints, glm::vec2 *optimisation, int *size) {
-
-	//expects files of form:
-	//_A.txt	first line contain ("%i %i", number of constraints, dimensions = 2)
-	//			rest of file containing equations of form A_i*x_i < B. i sums over dimensions
-	//B file	containing the appropriate value for B for above equation
-	//C file	containing objective function parameters x & y to MINIMIZE
-
 	//Organise filename input
 	string fileA = filename + "_A.txt"; string fileB = filename + "_B.txt"; string fileC = filename + "_C.txt";
 
@@ -137,14 +135,14 @@ void convertLine3to4(float4 * fourVar, glm::vec2 A, float b) {
 	}
 	//usual case
 	else {
-		diry = 1;
-		dirx = -xcomp / ycomp;
+		diry = xcomp;
+		dirx = -ycomp;
 		pointx = 0;
 		pointy = y_intc / ycomp;
 	}
 
 	//point dirx diry in right direction
-	if (ycomp < 0) {
+	if (ycomp <= 0) {
 		//dirx is positive
 		dirx = (dirx < 0) ? -dirx : dirx;
 	}
@@ -152,7 +150,7 @@ void convertLine3to4(float4 * fourVar, glm::vec2 A, float b) {
 		//dirx negative
 		dirx = (dirx < 0) ? dirx : -dirx;
 	}
-	if (xcomp < 0) {
+	if (xcomp <= 0) {
 		//diry is negative
 		diry = (diry < 0) ? diry : -diry;
 	}

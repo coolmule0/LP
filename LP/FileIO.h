@@ -26,7 +26,6 @@
 */
 bool parseBenchmark(std::string filename, float4** ORCA_line, glm::vec2 *optimisation, int *size);
 
-
 /*
 * Converts line of form Ax < b to lineDir & linePoint (in @fourVar)
 */
