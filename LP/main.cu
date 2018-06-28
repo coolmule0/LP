@@ -16,14 +16,9 @@
 #define maxSpeed_ 100000000000 // large artificial circular constraint
 #define RVO_EPSILON 0.00001f //something close to zero
 
-//#define VARBLOCKSIZE 1
-#define printInfo
-#ifdef VARBLOCKSIZE
-	int BlockDimSize = -1;
-#else
-	//number of threads in a block. Must be a multiple of 32!
-	#define BlockDimSize 128
-#endif
+//#define printInfo
+//number of threads in a block. Must be a multiple of 32!
+#define BlockDimSize 128
 
 //enum for min max
 enum optimisation { MINIMISE, MAXIMISE };
@@ -213,41 +208,6 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 	const int index = (blockIdx.x * blockDim.x) + threadIdx.x;
 	const int tid = threadIdx.x;
 
-#ifdef VARBLOCKSIZE
-	extern __shared__ char smarray[];
-
-	int *compArr = (int *)smarray; //shared compressed array working list
-	int *active_agents = &(compArr[blockDim.x]); //shared number of threads in block that are in the active compression
-	float4 *s_line = (float4*)&(active_agents[1]); //shared current orca line of interest x:direction.x y:direction.y z:point.x w:point.y
-	float2 *s_t = (float2*)&(s_line[blockDim.x]); //tleft and tright shared
-	int *s_lineFail= (int*)&(s_t[blockDim.x]); //on which neighbour number the lp has failed shared. -1 if succeeded
-	glm::vec2 *s_newv = (glm::vec2*)&(s_lineFail[blockDim.x]); //solution
-	glm::vec2 *s_desv = &(s_newv[blockDim.x]); //position to be closest to/value that optimises objective function
-
-	//test writes
-	if(index == 0){
-		for(int i = 0; i<blockDim.x; i++){
-			compArr[i] = i;
-			s_line[i] = make_float4(i,i,i,i);
-			s_t[i] = make_float2(i,i);
-			s_lineFail[i] = i;
-			s_newv[i] = glm::vec2(i,i);
-			s_desv[i] = glm::vec2(i,i);
-		}
-		for(int i = 0; i<blockDim.x; i++){
-			printf("\n");
-			printf("%i",compArr[i]);
-			printf("%i",s_line[i]);
-			//s_t[i] = make_float2(i,i);
-			//s_lineFail[i] = i;
-			//s_newv[i] = glm::vec2(i,i);
-			//s_desv[i] = glm::vec2(i,i);
-			printf("\n");
-		}
-	}
-
-
-#else
 	//initialize SM
 	__shared__ int compArr[BlockDimSize]; //shared compressed array working list
 	__shared__ int active_agents[1]; //shared number of threads in block that are in the active compression
@@ -256,7 +216,6 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 	__shared__ int s_lineFail[BlockDimSize]; //on which neighbour number the lp has failed shared. -1 if succeeded
 	__shared__ glm::vec2 s_newv[BlockDimSize]; //solution
 	__shared__ glm::vec2 s_desv[BlockDimSize]; //position to be closest to/value that optimises objective function
-#endif
 	//whether to minimise or maximise objective function
 	enum optimisation optimiseFunc = MAXIMISE;
 
