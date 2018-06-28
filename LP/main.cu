@@ -508,7 +508,7 @@ int main(int argc, const char* argv[])
 	cudaEventRecord(stop);
 	cudaEventSynchronize(stop);
 	cudaEventElapsedTime(&memory_milliseconds, start, stop);
-	printf("Memory processing time: %f (ms)\n", memory_milliseconds);
+	//printf("Memory processing time: %f (ms)\n", memory_milliseconds);
 
 
 	//------------------------------------------
@@ -536,7 +536,7 @@ int main(int argc, const char* argv[])
 	cudaEventRecord(stop);
 	cudaEventSynchronize(stop);
 	cudaEventElapsedTime(&milliseconds, start, stop);
-	printf("Kernel Processing time: %f (ms)\n", milliseconds);
+	//printf("Kernel Processing time: %f (ms)\n", milliseconds);
 
 	cudaDeviceSynchronize();
 
