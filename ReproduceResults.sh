@@ -10,6 +10,7 @@ for r in {1..5}; do
             echo $FILENAME
             ./x64/Release/CPLEX.exe $FILENAME $BATCH
             ./x64/Release/LP.exe $FILENAME $BATCH
+            echo ""
         done
     done
 done
