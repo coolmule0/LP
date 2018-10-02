@@ -55,13 +55,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>IL_STD;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(CPLEX_STUDIO_DIR1271)\cplex\include;$(CPLEX_STUDIO_DIR1271)\concert\include;$(SolutionDir)/include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(CPLEX_STUDIO_DIR1271)\cplex\include;$(CPLEX_STUDIO_DIR1271)\concert\include;$(SolutionDir)/include;$(CUDA_PATH)/include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CPLEX_STUDIO_DIR1271)\cplex\lib\x64_windows_vs2015\stat_mda\cplex1271.lib;$(CPLEX_STUDIO_DIR1271)\cplex\lib\x64_windows_vs2015\stat_mda\ilocplex.lib;$(CPLEX_STUDIO_DIR1271)\concert\lib\x64_windows_vs2015\stat_mda\concert.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(CPLEX_STUDIO_DIR1271)\cplex\include;$(CPLEX_STUDIO_DIR1271)\concert\include;$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalDependencies>cudart.lib;$(CPLEX_STUDIO_DIR1271)\cplex\lib\x64_windows_vs2015\stat_mdd\cplex1271.lib;$(CPLEX_STUDIO_DIR1271)\cplex\lib\x64_windows_vs2015\stat_mdd\ilocplex.lib;$(CPLEX_STUDIO_DIR1271)\concert\lib\x64_windows_vs2015\stat_mdd\concert.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>$(CUDA_PATH)\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -73,15 +74,16 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>IL_STD;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(CPLEX_STUDIO_DIR1271)\cplex\include;$(CPLEX_STUDIO_DIR1271)\concert\include;$(SolutionDir)/include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(CPLEX_STUDIO_DIR1271)\cplex\include;$(CPLEX_STUDIO_DIR1271)\concert\include;$(SolutionDir)/include;$(CUDA_PATH)/include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(CPLEX_STUDIO_DIR1271)\cplex\lib\x64_windows_vs2015\stat_mda\cplex1271.lib;$(CPLEX_STUDIO_DIR1271)\cplex\lib\x64_windows_vs2015\stat_mda\ilocplex.lib;$(CPLEX_STUDIO_DIR1271)\concert\lib\x64_windows_vs2015\stat_mda\concert.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cudart.lib;$(CPLEX_STUDIO_DIR1271)\cplex\lib\x64_windows_vs2015\stat_mda\cplex1271.lib;$(CPLEX_STUDIO_DIR1271)\cplex\lib\x64_windows_vs2015\stat_mda\ilocplex.lib;$(CPLEX_STUDIO_DIR1271)\concert\lib\x64_windows_vs2015\stat_mda\concert.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>$(CUDA_PATH)\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

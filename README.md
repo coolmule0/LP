@@ -37,3 +37,7 @@ Ensure data is written with respects to maximising objective function, and inequ
 ## Reproducing Results
 
 Included are a bash and a batch script to run on Linux/Windows respectively. The script will run the executable numerous times. Currently a work in progress
+
+## CPLEX
+
+The same models can be ran using the CPLEX library. Currently only tested on windows. To build, ensure you set enviromental paths for: `CPLEX_STUDIO_DIR1271` to the base folder location of CPLEX.
