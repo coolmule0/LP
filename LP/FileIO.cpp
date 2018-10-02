@@ -10,34 +10,53 @@
 //#define FILEIO_PRINT 1
 using namespace std;
 
+bool parseBenchmark4(string filename, glm::vec4** constraints, glm::vec2 *optimisation, int *size) {
+	vector<glm::vec2> A; //values in A file
+	vector<float> b; //values in B file
+
+	parseBenchmark3(filename, A, b, optimisation, size);
+
+	//extend memory
+	*constraints = (glm::vec4*)malloc(sizeof(glm::vec4) * (*size));
+
+
+	////////////////////////////
+	//Convert A and b from Ax < b to lineDir, linePoint
+	for (int i = 0; i < (*size); i++) {
+		convertLine3to4(&((*constraints)[i]), A[i], b[i]);
+	}
+
+	return true;
+}
+
 //expects files of form:
 //_A.txt	first line contain ("%i %i", number of constraints, dimensions = 2)
 //			rest of file containing equations of form A_i*x_i < B. i sums over dimensions
 //B file	containing the appropriate value for B for above equation
 //C file	containing objective function parameters x & y to MINIMIZE
-bool parseBenchmark(string filename, float4** constraints, glm::vec2 *optimisation, int *size) {
+bool parseBenchmark3(string filename, vector<glm::vec2> &A, vector<float> &b, glm::vec2 *optimisation, int *size) {
 	//Organise filename input
 	string fileA = filename + "_A.txt"; string fileB = filename + "_B.txt"; string fileC = filename + "_C.txt";
 
 	//char *fileA = "benchmarks/Test_A.txt"; char *fileB = "benchmarks/Test_B.txt"; char *fileC = "benchmarks/Test_C.txt";
 	int dimTest; //check dimensions of input file
-	vector<glm::vec2> A; //values in A file
-	vector<float> b; //values in B file
-	//glm::vec2 c; //2 values in C file
+	//vector<glm::vec2> A; //values in A file
+	//vector<float> b; //values in B file
+					 //glm::vec2 c; //2 values in C file
 	int counter = 0; //checks loop iterations
 
 #ifdef FILEIO_PRINT
 #ifdef _WIN32 || _WIN64
-	//print absolute path
+					 //print absolute path
 	char absPath[100];
 	_fullpath(absPath, fileA.c_str(), 100);
 	printf("Absolute path expected for file A is %s\n", absPath);
 #elif __unix__
 	char cwd[1024];
 	if (getcwd(cwd, sizeof(cwd)) != NULL)
-		 fprintf(stdout, "Current working dir: %s\n", cwd);
- else
-		 perror("getcwd() error");
+		fprintf(stdout, "Current working dir: %s\n", cwd);
+	else
+		perror("getcwd() error");
 #endif //__unix__ or windows
 #endif // FILEIO_PRINT
 
@@ -53,11 +72,10 @@ bool parseBenchmark(string filename, float4** constraints, glm::vec2 *optimisati
 	//get number of constraints (in size) and double check file is in 2D
 	f >> *size >> dimTest;
 	if (dimTest != 2) {
-		cout<< "Expected 2 dimensions for input file!" << endl;
+		cout << "Expected 2 dimensions for input file!" << endl;
 	}
 
 	//extend memory
-	*constraints = (float4*)malloc(sizeof(float4) * (*size));
 	A.reserve(*size);
 	b.reserve(*size);
 
@@ -74,7 +92,7 @@ bool parseBenchmark(string filename, float4** constraints, glm::vec2 *optimisati
 	}
 	counter = 0; //reset counter;
 
-	//File B
+				 //File B
 	f.open(fileB.c_str());
 	if (!f.is_open()) {
 		cout << "unable to open file B" << endl;
@@ -90,7 +108,7 @@ bool parseBenchmark(string filename, float4** constraints, glm::vec2 *optimisati
 	}
 	counter = 0; //reset counter;
 
-	//File C
+				 //File C
 	f.open(fileC.c_str());
 	if (!f.is_open()) {
 		cout << "unable to open file C" << endl;
@@ -100,19 +118,13 @@ bool parseBenchmark(string filename, float4** constraints, glm::vec2 *optimisati
 	*optimisation = glm::vec2(xelem, yelem);
 	f.close();
 
-	////////////////////////////
-	//Convert A and b from Ax < b to lineDir, linePoint
-	for (int i = 0; i < (*size); i++) {
-		convertLine3to4(&((*constraints)[i]), A[i], b[i]);
-	}
-
 	return true;
 }
 
 /*
 * Converts line of form Ax < b to lineDir & linePoint (in @fourVar)
 */
-void convertLine3to4(float4 * fourVar, glm::vec2 A, float b) {
+void convertLine3to4(glm::vec4 * fourVar, glm::vec2 A, float b) {
 	float xcomp = A.x; float ycomp = A.y;
 	float x_intc = 0; //does not exist to be read
 	float y_intc = b;
@@ -160,14 +172,14 @@ void convertLine3to4(float4 * fourVar, glm::vec2 A, float b) {
 	}
 
 	//save
-	*fourVar = make_float4(dirx, diry, pointx, pointy);
+	*fourVar = { dirx, diry, pointx, pointy };
 
 }
 
 /*
 * Converts line of form lineDir & linePoint (in @fourVar) to Ax < b
 */
-void convertLine4to3(float4 fourVar, glm::vec2 *A, float *b) {
+void convertLine4to3(glm::vec4 fourVar, glm::vec2 *A, float *b) {
 	float m = fourVar.y / fourVar.x;
 	float c = fourVar.w - (fourVar.z * m);
 
@@ -176,7 +188,7 @@ void convertLine4to3(float4 fourVar, glm::vec2 *A, float *b) {
 }
 
 
-void writeLPtoFiles(float4 *h_lines, glm::vec2 optimisation, int size, const char* const name){
+void writeLPtoFiles(glm::vec4 *h_lines, glm::vec2 optimisation, int size, const char* const name){
 	//name in string form
 	string s_name = string(name);
 
@@ -225,7 +237,7 @@ void writeLPtoFiles(float4 *h_lines, glm::vec2 optimisation, int size, const cha
 
 
 
-/*void generateRandomLP(float4** lines, glm::vec2* optimisation, const int size){
+/*void generateRandomLP(glm::vec4** lines, glm::vec2* optimisation, const int size){
 	//y-offset of line to solution approximated
 	float yOffset = 50;
 
@@ -239,7 +251,7 @@ void writeLPtoFiles(float4 *h_lines, glm::vec2 optimisation, int size, const cha
 #endif
 
 	//memory allocation
-	*lines = (float4*)malloc(sizeof(float4) * size);
+	*lines = (glm::vec4*)malloc(sizeof(glm::vec4) * size);
 
 	//loop over all lps to generate
 	for (int i = 0; i < size; i++) {

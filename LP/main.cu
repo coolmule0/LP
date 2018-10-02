@@ -156,7 +156,7 @@ __device__ int compress(int input_data, int *compArr) {
 ////////////////////////////////////
 //Linear program auxillaries
 
-__device__ bool linearProgram1Fractions(const float4 lines_lineNo, const float4 lines_i, const float2 t2, float* tnew, bool *tLeftb)
+__device__ bool linearProgram1Fractions(const glm::vec4 lines_lineNo, const glm::vec4 lines_i, const float2 t2, float* tnew, bool *tLeftb)
 {
 	const glm::vec2 lines_direction_lineNo = glm::vec2(lines_lineNo.x, lines_lineNo.y);
 	const glm::vec2 lines_point_lineNo = glm::vec2(lines_lineNo.z, lines_lineNo.w);
@@ -197,13 +197,13 @@ __device__ bool linearProgram1Fractions(const float4 lines_lineNo, const float4 
 
 /*
 * Solve constrainsts subject to a maximisation/minimisation function
-* lines: float4 array of constraint lines of form {x gradient, y gradient, x point, y point }
+* lines: glm::vec4 array of constraint lines of form {x gradient, y gradient, x point, y point }
 * output: the 2 dimensional result of the linear program
 * batches: number of batches to solve
 * size: size of each batch
 * objective_function: variables to minimise.
 */
-__global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int batches, const int size, const glm::vec2* const objective_function) {
+__global__ void lpsolve(const glm::vec4 * const lines, glm::vec2 *output, const int batches, const int size, const glm::vec2* const objective_function) {
 	//thread index
 	const int index = (blockIdx.x * blockDim.x) + threadIdx.x;
 	const int tid = threadIdx.x;
@@ -211,7 +211,7 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 	//initialize SM
 	__shared__ int compArr[BlockDimSize]; //shared compressed array working list
 	__shared__ int active_agents[1]; //shared number of threads in block that are in the active compression
-	__shared__ float4 s_line[BlockDimSize]; //shared current orca line of interest x:direction.x y:direction.y z:point.x w:point.y
+	__shared__ glm::vec4 s_line[BlockDimSize]; //shared current orca line of interest x:direction.x y:direction.y z:point.x w:point.y
 	__shared__ float2 s_t[BlockDimSize]; //tleft and tright shared
 	__shared__ int s_lineFail[BlockDimSize]; //on which neighbour number the lp has failed shared. -1 if succeeded
 	__shared__ glm::vec2 s_newv[BlockDimSize]; //solution
@@ -301,7 +301,7 @@ __global__ void lpsolve(const float4 * const lines, glm::vec2 *output, const int
 
 				//read in the unique agent line combination using the calculated indices
 				int newIndex = n_tid + blockIdx.x*blockDim.x;
-				float4 lines_i = lines[(newIndex*size) + line_index];
+				glm::vec4 lines_i = lines[(newIndex*size) + line_index];
 
 #ifdef printInfo
 				if (n_tid + blockDim.x * blockIdx.x == ite) {
@@ -444,9 +444,9 @@ int main(int argc, const char* argv[])
 	int batches = 0; //number of LPs
 	int size = 0; //size of each LP
 	glm::vec2* x = NULL;  //< solution to randomly generated LP
-	float4* constraintsSingle = NULL; //array of constraints for 1 lp
+	glm::vec4* constraintsSingle = NULL; //array of constraints for 1 lp
 	glm::vec2 optimiseSingle; // variables to minimise in optimisation function for 1 lp
-	float4* constraints = NULL; // array of constraints
+	glm::vec4* constraints = NULL; // array of constraints
 
 	glm::vec2* optimise = NULL; //variable to minimise in optimisation function
 	glm::vec2* output = NULL; // array of optimal results in x & y.
@@ -469,7 +469,7 @@ int main(int argc, const char* argv[])
 
 	//Input is from file
 	printf("Parsing input files... ");
-	if(!parseBenchmark(argv[1], &constraintsSingle, &optimiseSingle, &size)){
+	if(!parseBenchmark4(argv[1], &constraintsSingle, &optimiseSingle, &size)){
 		return 1;
 	}
 	printf("Done\n");
@@ -490,7 +490,7 @@ int main(int argc, const char* argv[])
 	//memory allocation
 
 	gpuErrchk(cudaMallocManaged(&output, sizeof(glm::vec2) * batches));
-	gpuErrchk(cudaMallocManaged(&constraints, sizeof(float4) * batches * size));
+	gpuErrchk(cudaMallocManaged(&constraints, sizeof(glm::vec4) * batches * size));
 	gpuErrchk(cudaMallocManaged(&optimise, sizeof(glm::vec2) * batches));
 
 
