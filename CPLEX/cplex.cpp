@@ -70,6 +70,7 @@ int main(int argc, const char* argv[]) {
 
 		//------------------------------------------
 		//repeat runs
+//#pragma omp parallel for num_threads(4)
 		for (unsigned int n = 0; n < batches; n++) {
 
 			//set up problem 
@@ -117,10 +118,12 @@ int main(int argc, const char* argv[]) {
 
 	//end time
 	auto t2 = std::chrono::high_resolution_clock::now();
-
 	std::chrono::duration<double, std::milli> fp_ms = t2 - t1;
-
 	std::cout << "process took " << fp_ms.count() << " ms\n";
+
+	//------------------------------------------
+	//write timing to file
+	writeTimingtoFile("timings/CPLEXtimings.txt", size, batches, fp_ms.count());
 
 
 	return 0;
