@@ -307,3 +307,82 @@ int writeTimingtoFile(const char* const name, const int size, const int batches,
 	printf("Wrote to timing file data successfully\n");
 	return 0;
 }
+
+void convertToMPS(const char * const inname, const char * const outname)
+{
+	//get data
+	parseBenchmark3();
+
+	//open file to write
+	FILE *f = fopen(outname, "w");
+	if (f == NULL) {
+		printf("Error opening mps file for writing\n");
+		return;
+	}
+	//name
+	fprintf(f, "NAME          %s\n", testcasename); 
+	//rows
+	fprintf(f, "ROWNS\n");
+	fprintf(f, " N  OPT\n");
+	for (unsigned int i = 0; i < size, i++) {
+		fprintf(f, " L  R%i\n", i);
+	}
+	//Columns
+	fprintf(f, "COLUMNS\n");
+	for (unsigned int i = 0; i < size, i++) {
+		
+		if (i % 2 == 0) {
+			fprintf(f, "    Xone      ");
+		}
+		if (i == 0) {
+			fprintf(f, "    OPT      %f", i, optimal.x);
+		}
+		else {
+			fprintf(f, "    R%i      %f", i, A[i].x);
+		}
+		if (i + 1 == size || i%2 == 1) {
+			fprintf(f, "\n");
+		}
+	}
+
+
+	fprintf(f, "    Xone      OPT      %f", i, A[i].x);
+	for (unsigned int i = 0; i < size, i+=2) {
+		fprintf(f, "    Xone      R%i      %f", i, A[i].x);
+		if (i + 1 >= size) {
+			fprintf(f, "\n");
+		}
+		else {
+			fprintf(f, "    R%i      %f\n", i+1, A[i+1].x);
+		}
+	}
+	for (unsigned int i = 0; i < size, i+=2) {
+		fprintf(f, "    Ytwo      R%i      %f", i, A[i].y);
+		if (i + 1 >= size) {
+			fprintf(f, "\n");
+		}
+		else {
+			fprintf(f, "    R%i      %f\n", i + 1, A[i + 1].y);
+		}
+	}
+	//RHS
+	fprintf(f, "RHS\n");
+
+	for (unsigned int i = 0; i < size, i++) {
+		fprintf(f, "    RHS1      R%i      %f", i, b[i]);
+
+	}
+	
+
+
+NAME          TESTPROB
+ N  COST
+ L  LIM1
+ G  LIM2
+ E  MYEQN
+
+
+	fclose(f);
+	printf("Wrote to MPS file successfully\n");
+	return 0;
+}

@@ -75,3 +75,8 @@ Valid  / *Invalid*
  *
  */
  int writeTimingtoFile(const char* const name, const int size, const int batches, const float time);
+
+
+ /* Convert file_A _B and _C into a MPS file type of the same same, with .mps extension
+  */
+ void convertToMPS(const char* const inname, const char* const outname);
