@@ -308,34 +308,38 @@ int writeTimingtoFile(const char* const name, const int size, const int batches,
 	return 0;
 }
 
-void convertToMPS(const char * const inname, const char * const outname)
+
+void convertToMPS(std::string inname, std::string outname, int &size)
 {
 	//get data
-	parseBenchmark3();
+	std::vector<glm::vec2> A; //array of constraints for 1 lp
+	std::vector<float> b; //array of constraints for 1 lp
+	glm::vec2 optimiseSingle; // variables to minimise in optimisation function for 1 lp
+
+	parseBenchmark3(inname, A, b, &optimiseSingle, &size);
 
 	//open file to write
-	FILE *f = fopen(outname, "w");
+	FILE *f = fopen((outname+".mps").c_str(), "w");
 	if (f == NULL) {
 		printf("Error opening mps file for writing\n");
 		return;
 	}
 	//name
-	fprintf(f, "NAME          %s\n", testcasename); 
+	fprintf(f, "NAME          %s\n", inname); 
 	//rows
 	fprintf(f, "ROWNS\n");
 	fprintf(f, " N  OPT\n");
-	for (unsigned int i = 0; i < size, i++) {
+	for (unsigned int i = 0; i < size; i++) {
 		fprintf(f, " L  R%i\n", i);
 	}
 	//Columns
 	fprintf(f, "COLUMNS\n");
-	for (unsigned int i = 0; i < size, i++) {
-		
+	for (unsigned int i = 0; i < size; i++) { //variable 1
 		if (i % 2 == 0) {
 			fprintf(f, "    Xone      ");
 		}
 		if (i == 0) {
-			fprintf(f, "    OPT      %f", i, optimal.x);
+			fprintf(f, "    OPT      %f", i, optimiseSingle.x);
 		}
 		else {
 			fprintf(f, "    R%i      %f", i, A[i].x);
@@ -344,45 +348,52 @@ void convertToMPS(const char * const inname, const char * const outname)
 			fprintf(f, "\n");
 		}
 	}
-
-
-	fprintf(f, "    Xone      OPT      %f", i, A[i].x);
-	for (unsigned int i = 0; i < size, i+=2) {
-		fprintf(f, "    Xone      R%i      %f", i, A[i].x);
-		if (i + 1 >= size) {
-			fprintf(f, "\n");
+	for (unsigned int i = 0; i < size; i++) { //variable 2
+		if (i % 2 == 0) {
+			fprintf(f, "    Ytwo      ");
+		}
+		if (i == 0) {
+			fprintf(f, "    OPT      %f", i, optimiseSingle.y);
 		}
 		else {
-			fprintf(f, "    R%i      %f\n", i+1, A[i+1].x);
+			fprintf(f, "    R%i      %f", i, A[i].y);
 		}
-	}
-	for (unsigned int i = 0; i < size, i+=2) {
-		fprintf(f, "    Ytwo      R%i      %f", i, A[i].y);
-		if (i + 1 >= size) {
+		if (i + 1 == size || i % 2 == 1) {
 			fprintf(f, "\n");
 		}
-		else {
-			fprintf(f, "    R%i      %f\n", i + 1, A[i + 1].y);
-		}
 	}
+
 	//RHS
 	fprintf(f, "RHS\n");
-
-	for (unsigned int i = 0; i < size, i++) {
-		fprintf(f, "    RHS1      R%i      %f", i, b[i]);
-
+	for (unsigned int i = 0; i < size; i++) {
+		if (i % 2 == 0) {
+			fprintf(f, "    RHS1      ");
+		}
+		fprintf(f, "    R%i      %f", i, A[i].y);
+		if (i + 1 == size || i % 2 == 1) {
+			fprintf(f, "\n");
+		}
 	}
-	
+	//Bounds
+	fprintf(f, "BOUNDS\n");
+	fprintf(f, "  LO   BND1    Xone    0\n"); // 0<x
+	fprintf(f, "  LO   BND1    Ytwo    0\n"); // 0<y
 
-
-NAME          TESTPROB
- N  COST
- L  LIM1
- G  LIM2
- E  MYEQN
-
+	//done
+	fprintf(f, "ENDATA\n");
 
 	fclose(f);
 	printf("Wrote to MPS file successfully\n");
-	return 0;
+}
+
+
+void genrunfile(std::string filename)
+{
+	//open file to write
+	FILE *f = fopen("CPLEXrunfile", "w");
+	if (f == NULL) {
+		printf("Error opening mps file for writing\n");
+		return;
+	}
+	fprintf(f, string("read " + filename + " mps; \noptimize \nquit").c_str());
 }

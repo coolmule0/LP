@@ -77,6 +77,12 @@ Valid  / *Invalid*
  int writeTimingtoFile(const char* const name, const int size, const int batches, const float time);
 
 
- /* Convert file_A _B and _C into a MPS file type of the same same, with .mps extension
+ /* Convert file_A _B and _C into a MPS file type of the same name, with .mps extension
   */
- void convertToMPS(const char* const inname, const char* const outname);
+ void convertToMPS(std::string inname, std::string outname, int &size);
+
+ /*Create a run file, which can be easily passed to CPLEX to solve
+  *filename of file to optimise, with extension
+  *creates a CPLEX run file called "CPLEXrunfile"
+  */
+ void genrunfile(std::string filename);

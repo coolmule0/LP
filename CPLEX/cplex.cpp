@@ -8,8 +8,9 @@
 
 //uncomment for useful prints to console
 //#define PRINTINFO
-//Use MPS file to run CPLEX, or code below
-#define USEMPS
+
+//Use MPS file to run CPLEX. Comment out to run code below
+//#define USEMPS
 
 ILOSTLBEGIN
 
