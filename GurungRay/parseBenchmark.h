@@ -15,6 +15,7 @@
 
 //void selectBenchmark(int benchmarkNo, char* argvA, char* argvB, char* argvC);
 void selectBenchmark(int benchmarkNo, std::string& argvA, std::string&  argvB, std::string& argvC);
+void selectBenchmarkNamed(const std::string infile, std::string& argvA, std::string&  argvB, std::string& argvC);
 
 void parseLP(const char* argvA,const char* argvB,const char* argvC, math::matrix<double>& A, std::vector<double>& b, std::vector<double>& c, unsigned int& MaxMinFlag);
 

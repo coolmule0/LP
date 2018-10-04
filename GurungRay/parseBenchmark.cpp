@@ -68,6 +68,18 @@ void selectBenchmark(int benchmarkNo, std::string& argvA, std::string&  argvB, s
 	std::cout << "Absolute path is " << absPath << "\n";
 }
 
+void selectBenchmarkNamed(const std::string inName, std::string& argvA, std::string&  argvB, std::string& argvC) {
+	argvA = inName + "_A.txt";
+	argvB = inName + "_B.txt";
+	argvC = inName + "_C.txt";
+
+	////get absolute path
+	//char absPath[100];
+	//_fullpath(absPath, argvA.c_str(), 100);
+	//std::cout << "Absolute path is " << absPath << "\n";
+}
+
+
 void parseLP(const char* argvA,const  char* argvB,const  char* argvC, math::matrix<double>& A, std::vector<double>& b, std::vector<double>& c, unsigned int& MaxMinFlag ){
 	/*std::cout << "Argument 1) Afile -- "<<argvA <<std::endl;
 	std::cout << "Argument 2) Bfile -- "<<argvB <<std::endl;

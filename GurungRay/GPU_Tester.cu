@@ -21,7 +21,13 @@
 #include "math/matrix.h"
 #include <climits>
 #include <iostream>
+ //whether to use boost or chrono, chrono is consistent across tested CPU methods
+#define CHRONO
+#ifdef CHRONO
+#include <chrono>
+#else
 #include "boost/timer/timer.hpp"
+#endif
 #include <fstream>
 #ifdef WIN32
 	
@@ -41,7 +47,6 @@ int main(int argc, char *argv[]) {
 	std::vector<double> b, c;
 	std::vector<double> result;
 	std::vector<int> status_val;
-	double Final_Time;
 	std::string afile, bfile, cfile, efile;
 
 
@@ -52,7 +57,7 @@ int main(int argc, char *argv[]) {
 			std::cout << "\nInsufficient Number of Arguments!!!\n";
 			std::cout << "Correct Usages/Syntax:\n";
 			std::cout << "./ProjName   'Benchmark-NO'   'Average'  'Batch-Size'\n";
-			std::cout << "Argument 1) Benchmark-NO -- The Benchmark No or Random LP dimension\n";
+			std::cout << "Argument 1) Benchmark-Name -- The Benchmark Name to use, e.g. 'benchmark/256'\n";
 			std::cout << "Argument 2) Average -- Number of Average reading to be taken\n";
 			std::cout << "Argument 3) Batch-size -- Number of LPs to be solved \n";
 			std::cout << "Argument 4) Stream-size -- Number of Streams to be used \n";
@@ -67,7 +72,8 @@ int main(int argc, char *argv[]) {
 		randOrBenchmark=atoi(argv[5]);
 
 		if (randOrBenchmark==1){
-			selectBenchmark(atoi(argv[1]), afile, bfile, cfile);//Selecting the required benchmark files having Matrix A, vector b and c.
+			//selectBenchmark(atoi(argv[1]), afile, bfile, cfile);//Selecting the required benchmark files having Matrix A, vector b and c.
+			selectBenchmarkNamed(argv[1], afile, bfile, cfile);//Selecting the required benchmark files having Matrix A, vector b and c.
 			parseLP(afile.c_str(), bfile.c_str(), cfile.c_str(), A, b, c, MaxMinFlag);//parse the selected Benchmark files to convert into Matrix A along with vector b and c.
 		}else{
 			generateRandomLP(atoi(argv[1]),A,b,c,MaxMinFlag);
@@ -115,10 +121,13 @@ int main(int argc, char *argv[]) {
 		 *
 		 */
 
+#ifdef CHRONO
+		std::chrono::duration<double, std::milli> sum;
+#else
 		double sum = 0.0;
 		double wall_clock, return_Time;
 		boost::timer::cpu_timer tt1, tt2, tt3;	//tt1 -- Variable declaration
-
+#endif
 		//Since our GPU LP Solver consider Maximize by default so we multiply -1 to the objective function
 
 		C.resize(LP_size, c.size());	//objective function
@@ -151,43 +160,6 @@ int main(int argc, char *argv[]) {
 		double res = 0.0;
 		double batchTime = 0.0, AvgBatchTime = 0.0;
 		std::vector<double> resul(C.size1());
-
-
-//		for (int k = 1; k <= avg; k++) {
-//			//batchTime = 0.0;
-//			tt1.start();
-//#pragma omp parallel for num_threads(4)
-//			for (int i = 0; i < C.size1(); i++) {
-//				glpk_lp_solver mylp;
-//				mylp.setMin_Or_Max(2);	//2 for Maximize and 1 for Minimize
-//				for (int j = 0; j < c.size(); j++) {
-//					dir[j] = C(i, j);
-//				}
-//				mylp.setConstraints(A, b, 1); //this function actually determines independent LP in GLPK
-//				res = mylp.Compute_LLP(dir); //We consider every dir an independent LP problem
-//				//res = mylp.Compute_LLP(c); //We consider every dir an independent LP problem
-//				resul[i] = res;
-//			}
-//			tt1.stop();
-//			wall_clock = tt1.elapsed().wall / 1000000; //convert nanoseconds to milliseconds
-//			return_Time = wall_clock / (double) 1000; //convert milliseconds to seconds
-//			batchTime = return_Time; //convert nanoseconds to milliseconds
-//			AvgBatchTime = AvgBatchTime + batchTime;
-//		}
-//
-//
-//		Final_Time = AvgBatchTime / avg;
-//
-//		std::cout << "\n*****GLPK RESULT*****\n";
-//		std::cout << "\nBoost Time taken:Wall  (in Seconds):: GLPK= " << (double) Final_Time << std::endl;
-//
-//		/*std::cout << "\nVERIFICATION FOR CORRECTNESS\n";
-//		for (int i = 0; i < LP_size; i++) {
-//			if (MaxMinFlag == 1)
-//				std::cout << "GLPK: " << -1 * resul[i]<< std::endl;
-//			else
-//				std::cout << "GLPK: " << resul[i] << std::endl;
-//		}*/
 
 /*
  * Before Solving the given batch-size of LPs
@@ -249,30 +221,47 @@ int max=10;//Decide to view max number of LPs as verification for correctness of
 			for (unsigned int i = 0; i <= avg; i++) {
 				Simplex s(C.size1(), multipleBatch);
 				s.setConstratint(A, b);	//setting constraints also recorded like in GLPK for independent LP
+#ifdef CHRONO
+				auto tt1 = std::chrono::high_resolution_clock::now();
+#else
 				tt1.start();
+#endif
 				s.ComputeLP(C, numberOfStreams);
+#ifdef CHRONO
+				auto tt2 = std::chrono::high_resolution_clock::now();
+				std::chrono::duration<double, std::milli> return_Time = tt2 - tt1;
+				sum += return_Time;
+
+#else
 				tt1.stop();
 				if (i == 0) {
 					wall_clock = tt1.elapsed().wall / 1000000; //convert nanoseconds to milliseconds
-					return_Time = wall_clock / (double) 1000; //convert milliseconds to seconds
-					std::cout << "Iter 0: " << "Time = " << return_Time <<" Seconds" << std::endl;
-				} else {
+					return_Time = wall_clock / (double)1000; //convert milliseconds to seconds
+					std::cout << "Iter 0: " << "Time = " << return_Time << " Seconds" << std::endl;
+				}
+				else {
 					wall_clock = tt1.elapsed().wall / 1000000; //convert nanoseconds to milliseconds
-					return_Time = wall_clock / (double) 1000; //convert milliseconds to seconds
-					std::cout << "Iter " << i << ": Time = " << return_Time <<" Seconds" << std::endl;
+					return_Time = wall_clock / (double)1000; //convert milliseconds to seconds
+					std::cout << "Iter " << i << ": Time = " << return_Time << " Seconds" << std::endl;
 					sum = sum + return_Time; //convert nanoseconds to milliseconds
 				}
+#endif
 				result = s.getResultAll();
 			//	std::cout<<"results[0]="<<result[0]<< "  = "<<s.getResultAll()[1]<<std::endl;
 			}
+
+#ifdef CHRONO
+			std::chrono::duration<double, std::milli> Final_Time2 = sum / (double)avg;
+			std::cout << "\n*****GPU RESULT*****\n";
+			std::cout << "\nCHRONO Time taken:Wall  (in ms):: GPU= " << Final_Time2.count() << std::endl;
+
+#else
 			double	Final_Time2 = sum / avg;
 			std::cout << "\n*****GPU RESULT*****\n";
 			std::cout << "\nBoost Time taken:Wall  (in Seconds):: GPU= " << (double) Final_Time2 << std::endl;
 
-			std::cout << "\n*****GLPK RESULT*****\n";
-			std::cout << "\nBoost Time taken:Wall  (in Seconds):: GLPK= " << (double) Final_Time << std::endl;
 			//std::cout << "\nNumber of Simplex Solved = " << C.size1() << std::endl;
-
+#endif
 			std::cout << "\n**Answer_Of_All_Simplex**\n";
 			//int max = 5;	//LP_size;	//Verifying results of only first 5 LPs.
 			if (LP_size < max)
@@ -334,7 +323,7 @@ int max=10;//Decide to view max number of LPs as verification for correctness of
 			//struct block_lp_result eachBlock;
 			//eachBlock.results.resize(numberSolved);	//last block will be less
 
-			sum = 0.0;
+			//sum = 0.0;
 			for (std::list<block_lp>::iterator it = bulk_lps.begin(); it != bulk_lps.end(); it++) {
 				struct block_lp_result eachBlock;
 				math::matrix<double> obj_coeff;
@@ -343,14 +332,25 @@ int max=10;//Decide to view max number of LPs as verification for correctness of
 				s.setConstratint(A, b);	//setting constraints also recorded like in GLPK for independent LP
 				obj_coeff = (*it).block_obj_coeff;
 				//std::cout<<"obj_coeff\n"<<obj_coeff;
+#ifdef CHRONO
+				auto tt3 = std::chrono::high_resolution_clock::now();
+#else
 				tt3.start();
+#endif
 				s.ComputeLP(obj_coeff, numberOfStreams);
+#ifdef CHRONO
+				auto tt4 = std::chrono::high_resolution_clock::now();
+				std::chrono::duration<double, std::milli> return_Time = tt4 - tt3;
+				sum += return_Time;
+				std::cout << "\nBatch Time (in Seconds):: GPU= " << return_Time.count() << std::endl;
+#else
 				tt3.stop();
 
-				wall_clock = tt3.elapsed().wall / 1000000; //convert nanoseconds to milliseconds
+				wall_clock = tt3.elapsed().wall / 1000; //convert nanoseconds to milliseconds
 				return_Time = wall_clock / (double) 1000; //convert milliseconds to seconds
 				sum = sum + return_Time; //convert nanoseconds to milliseconds
 				std::cout << "\nBatch Time (in Seconds):: GPU= " << (double) return_Time<< std::endl;
+#endif
 				eachBlock.results = s.getResultAll();
 				bulk_result.push_back(eachBlock);
 
@@ -372,11 +372,11 @@ int max=10;//Decide to view max number of LPs as verification for correctness of
 			}
 			// **************** Obtaining Result of each batches ***************************
 			std::cout << "\n*****GPU RESULT*****\n";
+#ifdef CHRONO
+			std::cout << "\nChrono Time taken:Wall  (in Seconds):: GPU= " << sum.count() << std::endl;
+#else
 			std::cout << "\nBoost Time taken:Wall  (in Seconds):: GPU= " << (double) sum << std::endl;
-
-			std::cout << "\n*****GLPK RESULT*****\n";
-			std::cout << "\nBoost Time taken:Wall  (in Seconds):: GLPK= " << (double) Final_Time << std::endl;
-
+#endif
 			std::cout << "\n**Answer_Of_All_Simplex**\n";
 			//int max = 5;	//LP_size;	//Verifying results of only first 5 LPs.
 			if (LP_size < max)
@@ -400,9 +400,13 @@ int max=10;//Decide to view max number of LPs as verification for correctness of
 
 
 		//GPU
-		double millisecondsGPU = sum*1000.0f;
-		timingFile.open("BLPG_GPU_timing.txt", std::ios::app);
-		timingFile << size << "\t" << batches << "\t" << millisecondsGPU << std::endl;
+		timingFile.open("timings/GRtimings.txt", std::ios::app);
+#ifdef CHRONO
+		timingFile << size << "\t" << batches << "\t" << sum.count() << std::endl;
+#else
+		timingFile << size << "\t" << batches << "\t" << sum << std::endl;
+#endif
+
 		timingFile.close();
 		std::cout << "Done!" << std::endl;
 	}
