@@ -1,4 +1,4 @@
-This project runs the GLPK side of the model of gurung and ray. 
+This project runs the GLPK side of the model of gurung and ray. To choose between multicore CPU and single-core, uncomment/comment out the define statement "OMP" in "GPU_Tester.cu", and build. A pre-built version of both is provided uner GLPK.exe and mGLPK.exe, where m stands for multicore-enabled.
 
 For eg to Run the Netlib benchmark number 7 in the paper with batch-size of 1000 LPs
 using 10 streams   type the following command on the terminal (the script file BLPGSolver is executed which runs the executable in the folder bin)
@@ -6,10 +6,10 @@ using 10 streams   type the following command on the terminal (the script file B
  ./BLPGSolver 7 1 1000 10 1
  
  The name of the application is BLPGSolver to mean Batched LP Solver in GPU,
- 1st Argument: indicate the benchmark number (option is 1 to 8 as presented in the paper)
+ 1st Argument: Benchmark-Name -- The Benchmark Name to use, e.g. 'benchmark/256'
  2nd Argument: indicate the averaging number
  3rd Argument: indicate the size of batch i.e., the number of LPs to be solved
- 4th Argument: indicate the number of streams to be created, use 1 when batch-size is upto 100 otherwise 10
+ 4th Argument: not used here
  5th Argument: can be 1 to decides to execute the Netlib benchmarks and 2 to decide to choose random LPs of dimension as supplied by the 1st Argument 
 
 

@@ -1,36 +1,33 @@
-/**
- * Copyright 1993-2012 NVIDIA Corporation.  All rights reserved.
- *
- * Please refer to the NVIDIA end user license agreement (EULA) associated
- * with this source code for terms and conditions that govern your use of
- * this software. Any use, reproduction, disclosure, or distribution of
- * this software and related documentation outside the terms of the EULA
- * is strictly prohibited.
- */
-
 /*
  * This Project contains a comparison of GLPK solver running multiple LPs sequentially one after another with our batched LP solver in GPU.
  *
  */
+ //whether to use boost or chrono, chrono is consistent across tested CPU methods
+#define CHRONO
+ //whether to use multiple core (OMP), or single core
+//#define OMP
 
 #include <stdio.h>
 #include <stdlib.h>
-//#include "simplex.cuh"
-//#include "math/glpk_lp_solver/glpk_lp_solver.h"
 #include <vector>
-//#include "math/matrix.h"
 #include <climits>
 #include <iostream>
-#include "boost/timer/timer.hpp"
 #include <fstream>
+#ifdef CHRONO
+#include <chrono>
+#else
+#include "boost/timer/timer.hpp"
+#endif
 #ifdef WIN32
 	
 #else
 	#include "sys/time.h"
 #endif
 #include "parseBenchmark.h"
-//#include "dataStructure.h"
+
+#ifdef OMP
 #include <omp.h>
+#endif
 
 
 int main(int argc, char *argv[]) {
@@ -41,7 +38,6 @@ int main(int argc, char *argv[]) {
 	std::vector<double> b, c;
 	std::vector<double> result;
 	std::vector<int> status_val;
-	double Final_Time;
 	std::string afile, bfile, cfile, efile;
 
 
@@ -52,7 +48,7 @@ int main(int argc, char *argv[]) {
 			std::cout << "\nInsufficient Number of Arguments!!!\n";
 			std::cout << "Correct Usages/Syntax:\n";
 			std::cout << "./ProjName   'Benchmark-NO'   'Average'  'Batch-Size'\n";
-			std::cout << "Argument 1) Benchmark-NO -- The Benchmark No or Random LP dimension\n";
+			std::cout << "Argument 1) Benchmark-Name -- The Benchmark Name to use, e.g. 'benchmark/256'\n";
 			std::cout << "Argument 2) Average -- Number of Average reading to be taken\n";
 			std::cout << "Argument 3) Batch-size -- Number of LPs to be solved \n";
 			std::cout << "Argument 4) Stream-size -- Number of Streams to be used \n";
@@ -67,7 +63,8 @@ int main(int argc, char *argv[]) {
 		randOrBenchmark=atoi(argv[5]);
 
 		if (randOrBenchmark==1){
-			selectBenchmark(atoi(argv[1]), afile, bfile, cfile);//Selecting the required benchmark files having Matrix A, vector b and c.
+			//selectBenchmark(atoi(argv[1]), afile, bfile, cfile);//Selecting the required benchmark files having Matrix A, vector b and c.
+			selectBenchmarkNamed(argv[1], afile, bfile, cfile);//Selecting the required benchmark files having Matrix A, vector b and c.
 			parseLP(afile.c_str(), bfile.c_str(), cfile.c_str(), A, b, c, MaxMinFlag);//parse the selected Benchmark files to convert into Matrix A along with vector b and c.
 		}else{
 			generateRandomLP(atoi(argv[1]),A,b,c,MaxMinFlag);
@@ -115,10 +112,6 @@ int main(int argc, char *argv[]) {
 		 *
 		 */
 
-		double sum = 0.0;
-		double wall_clock, return_Time;
-		boost::timer::cpu_timer tt1, tt2, tt3;	//tt1 -- Variable declaration
-
 		//Since our GPU LP Solver consider Maximize by default so we multiply -1 to the objective function
 
 		C.resize(LP_size, c.size());	//objective function
@@ -149,14 +142,25 @@ int main(int argc, char *argv[]) {
 
 		//***** MODEL SELECTION *****
 		double res = 0.0;
-		double batchTime = 0.0, AvgBatchTime = 0.0;
 		std::vector<double> resul(C.size1());
-
+#ifdef CHRONO
+		std::chrono::duration<double, std::milli> AvgBatchTime, return_Time, Final_Time;
+#else
+		double Final_Time;
+		double wall_clock, return_Time;
+		boost::timer::cpu_timer tt1, tt2, tt3;	//tt1 -- Variable declaration
+		double batchTime = 0.0, AvgBatchTime = 0.0;
+#endif
 
 		for (int k = 1; k <= avg; k++) {
 			//batchTime = 0.0;
+#ifdef CHRONO
+			auto tt1 = std::chrono::high_resolution_clock::now();
+#else
 			tt1.start();
-#pragma omp parallel for num_threads(4)
+#endif // CHRONO
+
+#pragma omp parallel for
 			for (int i = 0; i < C.size1(); i++) {
 				glpk_lp_solver mylp;
 				mylp.setMin_Or_Max(2);	//2 for Maximize and 1 for Minimize
@@ -168,18 +172,31 @@ int main(int argc, char *argv[]) {
 				//res = mylp.Compute_LLP(c); //We consider every dir an independent LP problem
 				resul[i] = res;
 			}
+#ifdef CHRONO
+			auto tt2 = std::chrono::high_resolution_clock::now();
+			return_Time = tt2 - tt1;
+			AvgBatchTime += return_Time;
+#else
 			tt1.stop();
-			wall_clock = tt1.elapsed().wall / 1000000; //convert nanoseconds to milliseconds
+			wall_clock = tt1.elapsed().wall / 1000; //convert nanoseconds to milliseconds
 			return_Time = wall_clock / (double) 1000; //convert milliseconds to seconds
 			batchTime = return_Time; //convert nanoseconds to milliseconds
 			AvgBatchTime = AvgBatchTime + batchTime;
+#endif // CHRONO
 		}
 
-
-		Final_Time = AvgBatchTime / avg;
-
+#ifdef OMP
+		std::cout << "\n*****mGLPK RESULT*****\n";
+#else
 		std::cout << "\n*****GLPK RESULT*****\n";
-		std::cout << "\nBoost Time taken:Wall  (in Seconds):: GLPK= " << (double) Final_Time << std::endl;
+#endif
+#ifdef CHRONO
+		Final_Time = AvgBatchTime / (float)avg;
+		std::cout << "\nChrono Time taken:Wall  (in ms):: GLPK= " << Final_Time.count() << std::endl;
+#else
+		Final_Time = AvgBatchTime / (float)avg;
+		std::cout << "\nBoost Time taken:Wall  (in ms):: GLPK= " << (double)Final_Time << std::endl;
+#endif
 
 		/*std::cout << "\nVERIFICATION FOR CORRECTNESS\n";
 		for (int i = 0; i < LP_size; i++) {
@@ -197,11 +214,18 @@ int main(int argc, char *argv[]) {
 		int size = A.size1();
 		int batches = LP_size;
 		//CPU
-		double millisecondsCPU = Final_Time*1000.0;
-		timingFile.open("BLPG_CPU_OMP_timing.txt", std::ios::app);
-		timingFile << size << "\t" << batches << "\t" << millisecondsCPU << std::endl;
+#ifdef OMP
+		timingFile.open("timings/GLPK_OMPtimings.txt", std::ios::app);
+#else
+		timingFile.open("timings/GLPKtimings.txt", std::ios::app);
+#endif
+#ifdef CHRONO
+		timingFile << size << "\t" << batches << "\t" << Final_Time.count() << std::endl;
+#else
+		timingFile << size << "\t" << batches << "\t" << Final_Time << std::endl;
+#endif
 		timingFile.close();
-
+		std::cout << "Done" << std::endl;
 	}
 	return 0;
 
