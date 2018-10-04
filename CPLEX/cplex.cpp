@@ -2,13 +2,16 @@
 #include "../LP/FileIO.h"
 #include <glm/glm.hpp>
 #include <chrono>
+#include <stdlib.h>
+#include <string>
+#include <iostream>
 
 //uncomment for useful prints to console
 //#define PRINTINFO
+//Use MPS file to run CPLEX, or code below
+#define USEMPS
 
 ILOSTLBEGIN
-
-
 
 int main(int argc, const char* argv[]) {
 	//int batches = 0; //number of LPs
@@ -35,6 +38,17 @@ int main(int argc, const char* argv[]) {
 	}
 	const unsigned int batches = atoi(argv[2]); //number of LPs
 
+#ifdef USEMPS
+	//create and MPS of the file
+	convertToMPS(argv[1], argv[1], size);
+
+	//generate a run file
+	genrunfile(string(argv[1]) + ".mps;");
+
+	//the cplex runfile command - suppress cplex output
+	std::string runcommand = "cplex<CPLEXrunfile > nul";
+
+#else
 	Aall.reserve(batches);
 	ball.reserve(batches);
 
@@ -60,19 +74,23 @@ int main(int argc, const char* argv[]) {
 		}
 		optimise.push_back( optimiseSingle );
 	}
-
+#endif
 
 	//------------------------------------------
 	//initialize memory initialsation timings
 	auto t1 = std::chrono::high_resolution_clock::now();
 
-	try {
 
-		//------------------------------------------
-		//repeat runs
+	//------------------------------------------
+	//repeat runs
 //#pragma omp parallel for num_threads(4)
-		for (unsigned int n = 0; n < batches; n++) {
+	for (unsigned int n = 0; n < batches; n++) {
+		try {
 
+#ifdef USEMPS
+			//run it in CPLEX
+			system(runcommand.c_str());
+#else
 			//set up problem 
 			IloEnv env;
 			IloNumVarArray vars(env);
@@ -104,17 +122,17 @@ int main(int argc, const char* argv[]) {
 #endif // PRINTINFO
 
 			env.end();
-
+#endif
 		}
 
-		
+		catch (IloException& e) {
+			cerr << "Concert exception caught: " << e << endl;
+		}
+		catch (...) {
+			cerr << "Unknown exception caught" << endl;
+		}
 	}
-	catch (IloException& e) {
-		cerr << "Concert exception caught: " << e << endl;
-	}
-	catch (...) {
-		cerr << "Unknown exception caught" << endl;
-	}
+	
 
 	//end time
 	auto t2 = std::chrono::high_resolution_clock::now();
@@ -123,8 +141,11 @@ int main(int argc, const char* argv[]) {
 
 	//------------------------------------------
 	//write timing to file
+#ifdef USEMPS
+	writeTimingtoFile("timings/CPLEXtimingsv2.txt", size, batches, fp_ms.count());
+#else
 	writeTimingtoFile("timings/CPLEXtimings.txt", size, batches, fp_ms.count());
-
+#endif
 
 	return 0;
 }
