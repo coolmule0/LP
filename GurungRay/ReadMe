@@ -1,0 +1,35 @@
+This project runs Simplex Method implementation, to solve a batch of LPs on a GPU.
+System Configuration:
+The project is tested on a 4 Core Intel Xeon CPU E5-1607 v4, 3.10 GHz, 63 GB RAM with Nvidia’s Tesla K40m GPU. However, it should run on any GPU.
+For two set of LPs one on a randomly generated LPs and on a set of benchmarks from Netlib repository.
+
+The LP benchmarks from NetLib repository has been chosen only when it satisfy our limitation on size. 
+The platform of the project is 
+OS is a 64bit Linux Ubuntu 14.04, we used the Editor as Nvidia's Nsight using the C/C++ CUDA implementation.
+
+For eg to Run the Netlib benchmark number 7 in the paper with batch-size of 1000 LPs
+using 10 streams   type the following command on the terminal (the script file BLPGSolver is executed which runs the executable in the folder bin)
+
+ ./BLPGSolver 7 1 1000 10 1
+ 
+ The name of the application is BLPGSolver to mean Batched LP Solver in GPU,
+ 1st Argument: indicate the benchmark number (option is 1 to 8 as presented in the paper)
+ 2nd Argument: indicate the averaging number
+ 3rd Argument: indicate the size of batch i.e., the number of LPs to be solved
+ 4th Argument: indicate the number of streams to be created, use 1 when batch-size is upto 100 otherwise 10
+ 5th Argument: can be 1 to decides to execute the Netlib benchmarks and 2 to decide to choose random LPs of dimension as supplied by the 1st Argument 
+
+
+
+
+Dependency/Requirement:
+1)  GLPK to be installed, we use version 4.45
+2)  Boost Library (especially the boost_system and boost_timer )
+
+(however the project also contains a pre-compiled libraries in our 64bit experimental setup, in the folder lib)
+We observed that in some configuration some benchmarks does not give correct result, we suggest to use BLPGSolver-Debug in that case.
+
+We also provide the source codes
+1) BLPG-Solver : containing the actual source code required to generated the excutables in the folder bin (BLPGSolver and BLPGSolver-Debug)
+2) CPLEXvsGLPK : containing the actual source code required to run a comparison between GLPK and IBM CPLEX. However, it requires installing CPLEX to be able to run this project. We have used the academic version of CPLEX.
+
