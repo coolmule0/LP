@@ -25,7 +25,7 @@ int main(int argc, const char* argv[]) {
 	std::vector<std::vector<float>> ball; // array of constraints
 	std::vector<glm::vec2> optimise; //variable to minimise in optimisation function
 
-	ofstream logfile("CPLEXOutput.log"); //logfile of CPLEX solver
+	ofstream logfile("nul"); //logfile of CPLEX solver
 
 
 	//------------------------------------------
