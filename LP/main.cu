@@ -551,7 +551,9 @@ int main(int argc, const char* argv[])
 
     //------------------------------------------
 	//write timing to file
-	writeTimingtoFile("timings/timings.txt", size, batches, memory_milliseconds+milliseconds);
+	writeTimingtoFile("timings/RGBMemtimings.txt", size, batches, memory_milliseconds );
+	writeTimingtoFile("timings/RGBCalctimings.txt", size, batches, milliseconds);
+	writeTimingtoFile("timings/RGBtimings.txt", size, batches, memory_milliseconds+milliseconds);
 
 	//------------------------------------------
 	//cleanup
