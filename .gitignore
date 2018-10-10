@@ -243,3 +243,6 @@ ModelManifest.xml
 
 # Intermediate object files
 *.o
+
+# generated matlab files
+matlab/*/
