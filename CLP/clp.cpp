@@ -1,9 +1,6 @@
-
-// Copyright (C) 2002, International Business Machines
-// Corporation and others.  All Rights Reserved.
-
 #include "ClpSimplex.hpp"
 #include "../LP/FileIO.h"
+#include <chrono>
 
 int main(int argc, const char *argv[])
 {
@@ -18,6 +15,7 @@ int main(int argc, const char *argv[])
 		printf("Argument 2) Batch-size -- Number of LPs to be solved\n");
 		return 1;
 	}
+	const unsigned int batches = atoi(argv[2]); //number of LPs
 
 	//create and MPS of the file
 	convertToMPS(argv[1], argv[1], size);
@@ -26,9 +24,30 @@ int main(int argc, const char *argv[])
 	ClpSimplex  model;
 	int status;
 	status = model.readMps(filename.c_str());
-	if (!status) {
-		model.primal();
-		model.dual();
+	if (status) {
+		return 1;
 	}
+
+	//------------------------------------------
+	//initialize memory initialsation timings
+	auto t1 = std::chrono::high_resolution_clock::now();
+	for (unsigned int n = 0; n < batches; n++) {
+
+		model.primal();
+		//model.dual();
+
+	}
+
+
+	//end time
+	auto t2 = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> fp_ms = t2 - t1;
+	std::cout << "process took " << fp_ms.count() << " ms\n";
+
+	//------------------------------------------
+	//write timing to file
+	writeTimingtoFile("timings/CLP.txt", size, batches, fp_ms.count());
+
+
 	return 0;
 }
