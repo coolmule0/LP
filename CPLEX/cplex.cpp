@@ -10,7 +10,7 @@
 //#define PRINTINFO
 
 //Use MPS file to run CPLEX. Comment out to run code below
-//#define USEMPS
+#define USEMPS
 
 ILOSTLBEGIN
 
@@ -107,11 +107,23 @@ int main(int argc, const char* argv[]) {
 
 			//run problem
 			IloCplex cplex(model);
+
+			//choose model
+			//IloCplex::AutoAlg	allow CPLEX to choose the algorithm
+			//IloCplex::Dual	use the dual simplex algorithm
+			//IloCplex::Primal	use the primal simplex algorithm
+			//IloCplex::Barrier	use the barrier algorithm
+			//IloCplex::Network	use the network simplex algorithm for the embedded network
+			//IloCplex::Sifting	use the sifting algorithm
+			//IloCplex::Concurrent
+			//cplex.setParam(IloCplex::RootAlg, IloCplex::AutoAlg);
+
 			cplex.setOut(logfile);
 			if (!cplex.solve()) {
 				env.error() << "Failed to optimize LP." << endl;
 				throw(-1);
 			}
+
 
 #ifdef PRINTINFO
 			printf("iter %i\n", n);

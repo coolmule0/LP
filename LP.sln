@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GurungRay", "GurungRay\BLPG
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GLPK", "GLPK\GLPK.vcxproj", "{276F37FF-FDE8-4A40-88D6-8502AC332674}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CLP", "CLP\CLP.vcxproj", "{FCB3E395-9053-4DC5-8879-49C92273D6E5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -33,6 +35,10 @@ Global
 		{276F37FF-FDE8-4A40-88D6-8502AC332674}.Debug|x64.Build.0 = Debug|x64
 		{276F37FF-FDE8-4A40-88D6-8502AC332674}.Release|x64.ActiveCfg = Release|x64
 		{276F37FF-FDE8-4A40-88D6-8502AC332674}.Release|x64.Build.0 = Release|x64
+		{FCB3E395-9053-4DC5-8879-49C92273D6E5}.Debug|x64.ActiveCfg = Debug|x64
+		{FCB3E395-9053-4DC5-8879-49C92273D6E5}.Debug|x64.Build.0 = Debug|x64
+		{FCB3E395-9053-4DC5-8879-49C92273D6E5}.Release|x64.ActiveCfg = Release|x64
+		{FCB3E395-9053-4DC5-8879-49C92273D6E5}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
