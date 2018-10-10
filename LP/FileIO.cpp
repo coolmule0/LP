@@ -308,7 +308,6 @@ int writeTimingtoFile(const char* const name, const int size, const int batches,
 	return 0;
 }
 
-
 void convertToMPS(std::string inname, std::string outname, int &size)
 {
 	//get data
@@ -339,7 +338,7 @@ void convertToMPS(std::string inname, std::string outname, int &size)
 			fprintf(f, "    Xone      ");
 		}
 		if (i == 0) {
-			fprintf(f, "    OPT      %f", i, optimiseSingle.x);
+			fprintf(f, "    OPT      %f", -optimiseSingle.x);
 		}
 		else {
 			fprintf(f, "    R%i      %f", i, A[i].x);
@@ -353,7 +352,7 @@ void convertToMPS(std::string inname, std::string outname, int &size)
 			fprintf(f, "    Ytwo      ");
 		}
 		if (i == 0) {
-			fprintf(f, "    OPT      %f", i, optimiseSingle.y);
+			fprintf(f, "    OPT      %f", -optimiseSingle.y);
 		}
 		else {
 			fprintf(f, "    R%i      %f", i, A[i].y);
