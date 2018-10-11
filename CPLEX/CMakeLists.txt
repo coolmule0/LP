@@ -30,8 +30,8 @@ endif()
 ################################################################################
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
     string(CONCAT TARGET_NAME
-          $<$<CONFIG:Debug>:${OUT_DIR}${TARGET_NAME}$ENV{TargetExt}>
-        $<$<CONFIG:Release>:${OUT_DIR}${TARGET_NAME}$ENV{TargetExt}>
+          $<$<CONFIG:Debug>:${PROJECT_NAME}>
+        $<$<CONFIG:Release>:${PROJECT_NAME}>
         $<$<NOT:$<OR:$<CONFIG:Debug>,$<CONFIG:Release>>>:${PROJECT_NAME}>
     )
 endif()
