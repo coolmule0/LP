@@ -4,6 +4,13 @@ This is a batch linear program solver for Nvidia GPUs. Works for GPUs greater th
 
 ## How to build
 
+### CMAKE
+
+Ensure you set relevant cuda compute version by setting the flag `CMAKE_CUDA_FLAGS=-arch=sm_52`. This sets it to compute 52. Requirement is at least 30.
+Ensure release mode is built by setting flag `CMAKE_BUILD_TYPE=Release`
+
+Set CLP_DIR and CLP_LIB to the root folder and lib folder of a CLP installation.
+
 ### Windows
 
 Open LP.sln solution file in visual studio. Using Visual Studio 2015 and Cuda 8.0.

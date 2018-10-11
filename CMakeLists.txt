@@ -3,6 +3,11 @@ cmake_minimum_required(VERSION 3.9.0 FATAL_ERROR)
 project(LP)
 
 ################################################################################
+# Ensure C++ is modern enough
+################################################################################
+set (CMAKE_CXX_STANDARD 11)
+
+################################################################################
 # Set target arch type if empty. Visual studio solution generator provides it.
 ################################################################################
 if(NOT CMAKE_VS_PLATFORM_NAME)

@@ -1,6 +1,12 @@
 project(CLP CXX)
 
 ################################################################################
+# Library Location
+################################################################################
+set(CLP_LIB "" CACHE PATH "Path to CLP lib folder")
+set(CLP_INC "" CACHE PATH "Path to CLP include directory")
+
+################################################################################
 # Source groups
 ################################################################################
 set(Header_Files
@@ -54,8 +60,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OUT_
 ################################################################################
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
     target_include_directories(${PROJECT_NAME} PUBLIC
-          $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/include/clp;${CMAKE_SOURCE_DIR}/include/coinutils;${CMAKE_SOURCE_DIR}/include>
-        $<$<CONFIG:Release>:${CMAKE_SOURCE_DIR}/include/clp;${CMAKE_SOURCE_DIR}/include/coinutils;${CMAKE_SOURCE_DIR}/include>
+          $<$<CONFIG:Debug>:${CLP_INC}/coin;${CMAKE_SOURCE_DIR}/include>
+        $<$<CONFIG:Release>:${CLP_INC}/coin;${CMAKE_SOURCE_DIR}/include>
     )
 endif()
 
@@ -91,14 +97,14 @@ endif()
 # Link with other additional libraries.
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
     target_link_libraries(${PROJECT_NAME}
-          $<$<CONFIG:Debug>:libCoinUtils$<SEMICOLON>libClp>
-        $<$<CONFIG:Release>:libCoinUtils$<SEMICOLON>libClp>
+          $<$<CONFIG:Debug>:CoinUtils$<SEMICOLON>Clp>
+        $<$<CONFIG:Release>:CoinUtils$<SEMICOLON>Clp>
     )
 endif()
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
     target_link_directories(${PROJECT_NAME}
-        CONDITION   $<CONFIG:Debug> "${CMAKE_SOURCE_DIR}/lib"
-        CONDITION $<CONFIG:Release> "${CMAKE_SOURCE_DIR}/lib"
+        CONDITION   $<CONFIG:Debug> "${CMAKE_SOURCE_DIR}/lib" "${CLP_LIB}"
+        CONDITION $<CONFIG:Release> "${CMAKE_SOURCE_DIR}/lib" "${CLP_LIB}"
     )
 endif()
 
