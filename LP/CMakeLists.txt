@@ -1,4 +1,4 @@
-project(LP CXX)
+project(LP LANGUAGES CXX CUDA)
 
 ################################################################################
 # Source groups

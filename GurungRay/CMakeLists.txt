@@ -1,4 +1,4 @@
-project(GurungRay CXX)
+project(GurungRay LANGUAGES CXX CUDA)
 
 ################################################################################
 # Source groups
