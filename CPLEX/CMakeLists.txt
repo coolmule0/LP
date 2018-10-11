@@ -91,8 +91,8 @@ endif()
 # Link with other additional libraries.
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
     target_link_libraries(${PROJECT_NAME}
-          $<$<CONFIG:Debug>:cudart$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)\cplex\lib\x64_windows_vs2015\stat_mdd\cplex1271$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)\cplex\lib\x64_windows_vs2015\stat_mdd\ilocplex$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)\concert\lib\x64_windows_vs2015\stat_mdd\concert>
-        $<$<CONFIG:Release>:cudart$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)\cplex\lib\x64_windows_vs2015\stat_mda\cplex1271$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)\cplex\lib\x64_windows_vs2015\stat_mda\ilocplex$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)\concert\lib\x64_windows_vs2015\stat_mda\concert>
+          $<$<CONFIG:Debug>:cudart$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/cplex/lib/x64_windows_vs2015/stat_mdd/cplex1271$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/cplex/lib/x64_windows_vs2015/stat_mdd/ilocplex$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/concert/lib/x64_windows_vs2015/stat_mdd/concert>
+        $<$<CONFIG:Release>:cudart$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/cplex/lib/x64_windows_vs2015/stat_mda/cplex1271$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/cplex/lib/x64_windows_vs2015/stat_mda/ilocplex$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/concert/lib/x64_windows_vs2015/stat_mda/concert>
     )
 endif()
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
