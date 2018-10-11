@@ -54,8 +54,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OUT_
 ################################################################################
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
     target_include_directories(${PROJECT_NAME} PUBLIC
-          $<$<CONFIG:Debug>:$ENV{CPLEX_STUDIO_DIR1271}/cplex/include;$ENV{CPLEX_STUDIO_DIR1271}/concert/include;${CMAKE_SOURCE_DIR}\/include;$ENV{CUDA_PATH}/include>
-        $<$<CONFIG:Release>:$ENV{CPLEX_STUDIO_DIR1271}/cplex/include;$ENV{CPLEX_STUDIO_DIR1271}/concert/include;${CMAKE_SOURCE_DIR}\/include;$ENV{CUDA_PATH}/include>
+          $<$<CONFIG:Debug>:$ENV{CPLEX_STUDIO_DIR1271}/cplex/include;$ENV{CPLEX_STUDIO_DIR1271}/concert/include;${CMAKE_SOURCE_DIR}/include;$ENV{CUDA_PATH}/include>
+        $<$<CONFIG:Release>:$ENV{CPLEX_STUDIO_DIR1271}/cplex/include;$ENV{CPLEX_STUDIO_DIR1271}/concert/include;${CMAKE_SOURCE_DIR}/include;$ENV{CUDA_PATH}/include>
     )
 endif()
 

@@ -54,8 +54,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OUT_
 ################################################################################
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
     target_include_directories(${PROJECT_NAME} PUBLIC
-          $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}\/include/clp;${CMAKE_SOURCE_DIR}\/include/coinutils;${CMAKE_SOURCE_DIR}\/include>
-        $<$<CONFIG:Release>:${CMAKE_SOURCE_DIR}\/include/clp;${CMAKE_SOURCE_DIR}\/include/coinutils;${CMAKE_SOURCE_DIR}\/include>
+          $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/include/clp;${CMAKE_SOURCE_DIR}/include/coinutils;${CMAKE_SOURCE_DIR}/include>
+        $<$<CONFIG:Release>:${CMAKE_SOURCE_DIR}/include/clp;${CMAKE_SOURCE_DIR}/include/coinutils;${CMAKE_SOURCE_DIR}/include>
     )
 endif()
 
