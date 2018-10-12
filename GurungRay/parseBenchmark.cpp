@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <cstring>
+#include <errno.h>
 using namespace std;
 
 /*
@@ -61,11 +63,6 @@ void selectBenchmark(int benchmarkNo, std::string& argvA, std::string&  argvB, s
 	else {
 		std::cout << "Invalid benchmark no" << std::endl;
 	}
-
-	//get absolute path
-	char absPath[100];
-	_fullpath(absPath, argvA.c_str(), 100);
-	std::cout << "Absolute path is " << absPath << "\n";
 }
 
 void selectBenchmarkNamed(const std::string inName, std::string& argvA, std::string&  argvB, std::string& argvC) {

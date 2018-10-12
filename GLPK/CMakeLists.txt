@@ -1,6 +1,14 @@
 project(GLPK CXX)
 
 ################################################################################
+# Library Location
+################################################################################
+set(GLPK_LIB "" CACHE PATH "Path to GLPK lib folder")
+set(GLPK_INC "" CACHE PATH "Path to GLPK include/src directory")
+set(BOOST_LIB "" CACHE PATH "Path to Boost lib folder")
+set(BOOST_INC "" CACHE PATH "Path to Boost root directory")
+
+################################################################################
 # Source groups
 ################################################################################
 set(Header_Files
@@ -55,8 +63,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OUT_
 ################################################################################
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
     target_include_directories(${PROJECT_NAME} PUBLIC
-          $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/include;$ENV{BOOST_DIR};$ENV{GLPK_DIR}/src;${CMAKE_SOURCE_DIR}/GurungRay>
-        $<$<CONFIG:Release>:${CMAKE_SOURCE_DIR}/include;$ENV{BOOST_DIR};$ENV{GLPK_DIR}/src;${CMAKE_SOURCE_DIR}/GurungRay>
+          $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/include;${BOOST_INC};${GLPK_INC};${CMAKE_SOURCE_DIR}/GurungRay>
+        $<$<CONFIG:Release>:${CMAKE_SOURCE_DIR}/include;${BOOST_INC};${GLPK_INC};${CMAKE_SOURCE_DIR}/GurungRay>
     )
 endif()
 
@@ -92,13 +100,13 @@ endif()
 # Link with other additional libraries.
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
     target_link_libraries(${PROJECT_NAME}
-        $<$<CONFIG:Release>:glpk_4_64>
+        $<$<CONFIG:Release>:glpk>
     )
 endif()
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
     target_link_directories(${PROJECT_NAME}
-        CONDITION   $<CONFIG:Debug> "$ENV{BOOST_DIR}/stage/lib" "$ENV{GLPK_DIR}/w64"
-        CONDITION $<CONFIG:Release> "$ENV{BOOST_DIR}/stage/lib" "$ENV{GLPK_DIR}/w64"
+        CONDITION   $<CONFIG:Debug> "${GLPK_LIB}"
+        CONDITION $<CONFIG:Release> "${GLPK_LIB}"
     )
 endif()
 
