@@ -2,6 +2,7 @@
 #include "device_launch_parameters.h"
 #include "cuda_profiler_api.h"
 #include <glm/glm.hpp>
+#include <chrono>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -479,12 +480,7 @@ int main(int argc, const char* argv[])
 
 	//------------------------------------------
 	//initialize memory initialsation timings
-	cudaEvent_t start, stop;
-	float memory_milliseconds = 0;
-	cudaEventCreate(&start);
-	cudaEventCreate(&stop);
-	//start time
-	cudaEventRecord(start);
+	auto t1 = std::chrono::high_resolution_clock::now();
 
 	//------------------------------------------
 	//memory allocation
@@ -505,10 +501,8 @@ int main(int argc, const char* argv[])
 	}
 
     //end time
-	cudaEventRecord(stop);
-	cudaEventSynchronize(stop);
-	cudaEventElapsedTime(&memory_milliseconds, start, stop);
-	//printf("Memory processing time: %f (ms)\n", memory_milliseconds);
+	auto t2 = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> memory_milliseconds = t2 - t1;
 
 
 	//------------------------------------------
@@ -519,24 +513,18 @@ int main(int argc, const char* argv[])
 	b.x = blockSize;
 	g.x = gridSize;
 
-    //------------------------------------------
-	//initialize timings
-	float milliseconds = 0;
-	//start time
-	cudaEventRecord(start);
-
 	//------------------------------------------
 	//Kernel execution
 
 
 	//kernel
 	lpsolve <<< g, b >>>(constraints, output, batches, size, optimise);
+	cudaDeviceSynchronize();
 
 	//end time
-	cudaEventRecord(stop);
-	cudaEventSynchronize(stop);
-	cudaEventElapsedTime(&milliseconds, start, stop);
-	//printf("Kernel Processing time: %f (ms)\n", milliseconds);
+	auto t3 = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> milliseconds = t3 - t2;
+	printf("Kernel Processing time: %f (ms)\n", milliseconds);
 
 	cudaDeviceSynchronize();
 
@@ -551,9 +539,9 @@ int main(int argc, const char* argv[])
 
     //------------------------------------------
 	//write timing to file
-	writeTimingtoFile("timings/RGBMemtimings.txt", size, batches, memory_milliseconds );
-	writeTimingtoFile("timings/RGBCalctimings.txt", size, batches, milliseconds);
-	writeTimingtoFile("timings/RGBtimings.txt", size, batches, memory_milliseconds+milliseconds);
+	writeTimingtoFile("timings/RGBMemtimings.txt", size, batches, memory_milliseconds.count() );
+	writeTimingtoFile("timings/RGBCalctimings.txt", size, batches, milliseconds.count());
+	writeTimingtoFile("timings/RGBtimings.txt", size, batches, memory_milliseconds.count()+milliseconds.count());
 
 	//------------------------------------------
 	//cleanup
