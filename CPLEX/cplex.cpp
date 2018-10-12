@@ -10,7 +10,7 @@
 //#define PRINTINFO
 
 //Use MPS file to run CPLEX. Comment out to run code below
-#define USEMPS
+//#define USEMPS
 
 ILOSTLBEGIN
 
