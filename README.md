@@ -11,6 +11,8 @@ Ensure release mode is built by setting flag `CMAKE_BUILD_TYPE=Release`
 
 Set CLP_DIR and CLP_LIB to the root folder and lib folder of a CLP installation.
 
+On windows, ensure CudaToolkitBinDir is an environmental variable so runtime .dll's can be passed to the generated executable location. Failing this, manually copy cudart.dll to the executable location.
+
 ### Windows
 
 Open LP.sln solution file in visual studio. Using Visual Studio 2015 and Cuda 8.0.

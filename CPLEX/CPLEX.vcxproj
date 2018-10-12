@@ -74,7 +74,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>IL_STD;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(CPLEX_STUDIO_DIR1271)\cplex\include;$(CPLEX_STUDIO_DIR1271)\concert\include;$(SolutionDir)/include;$(CUDA_PATH)/include;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(CPLEX_STUDIO_DIR1271)\cplex\include;$(CPLEX_STUDIO_DIR1271)\concert\include;$(SolutionDir)/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

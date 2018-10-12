@@ -11,6 +11,7 @@ source_group("Headers" FILES ${Headers})
 
 set(Sources
     FileIO.cpp
+    main.cu
 )
 source_group("Sources" FILES ${Sources})
 
@@ -89,24 +90,26 @@ endif()
 # Post build events
 ################################################################################
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-    add_custom_command_if(
-        TARGET ${PROJECT_NAME}
-        POST_BUILD
-        COMMANDS
-        COMMAND   $<CONFIG:Debug> echo copy "$ENV{CudaToolkitBinDir}\\cudart*.dll" "$<SHELL_PATH:${OUT_DIR}>"
-        COMMAND   $<CONFIG:Debug> copy "$ENV{CudaToolkitBinDir}\\cudart*.dll" "$<SHELL_PATH:${OUT_DIR}>"
-        COMMAND $<CONFIG:Release> echo copy "$ENV{CudaToolkitBinDir}\\cudart*.dll" "$<SHELL_PATH:${OUT_DIR}>"
-        COMMAND $<CONFIG:Release> copy "$ENV{CudaToolkitBinDir}\\cudart*.dll" "$<SHELL_PATH:${OUT_DIR}>"
-    )
+    if(MSVC)
+        add_custom_command_if(
+            TARGET ${PROJECT_NAME}
+            POST_BUILD
+            COMMANDS
+            COMMAND   $<CONFIG:Debug> echo copy "$ENV{CudaToolkitBinDir}\\cudart*.dll" "$<SHELL_PATH:${OUT_DIR}>"
+            COMMAND   $<CONFIG:Debug> copy "$ENV{CudaToolkitBinDir}\\cudart*.dll" "$<SHELL_PATH:${OUT_DIR}>"
+            COMMAND $<CONFIG:Release> echo copy "$ENV{CudaToolkitBinDir}\\cudart*.dll" "$<SHELL_PATH:${OUT_DIR}>"
+            COMMAND $<CONFIG:Release> copy "$ENV{CudaToolkitBinDir}\\cudart*.dll" "$<SHELL_PATH:${OUT_DIR}>"
+        )
+    endif()
 endif()
 
 ################################################################################
 # Dependencies
 ################################################################################
 # Link with other additional libraries.
-if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-    target_link_libraries(${PROJECT_NAME}
-          $<$<CONFIG:Debug>:cudart$<SEMICOLON>kernel32$<SEMICOLON>user32$<SEMICOLON>gdi32$<SEMICOLON>winspool$<SEMICOLON>comdlg32$<SEMICOLON>advapi32$<SEMICOLON>shell32$<SEMICOLON>ole32$<SEMICOLON>oleaut32$<SEMICOLON>uuid$<SEMICOLON>odbc32$<SEMICOLON>odbccp32>
-        $<$<CONFIG:Release>:cudart$<SEMICOLON>kernel32$<SEMICOLON>user32$<SEMICOLON>gdi32$<SEMICOLON>winspool$<SEMICOLON>comdlg32$<SEMICOLON>advapi32$<SEMICOLON>shell32$<SEMICOLON>ole32$<SEMICOLON>oleaut32$<SEMICOLON>uuid$<SEMICOLON>odbc32$<SEMICOLON>odbccp32>
-    )
-endif()
+#if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+#    target_link_libraries(${PROJECT_NAME}
+#          $<$<CONFIG:Debug>:>
+#        $<$<CONFIG:Release>:>
+#    )
+#endif()
