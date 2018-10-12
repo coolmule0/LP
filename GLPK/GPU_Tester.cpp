@@ -5,7 +5,7 @@
  //whether to use boost or chrono, chrono is consistent across tested CPU methods
 #define CHRONO
  //whether to use multiple core (OMP), or single core
-//#define OMP
+#define OMP
 
 #include <stdio.h>
 #include <stdlib.h>
