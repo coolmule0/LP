@@ -502,7 +502,6 @@ int main(int argc, const char* argv[])
 
     //end time
 	auto t2 = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double, std::milli> memory_milliseconds = t2 - t1;
 
 
 	//------------------------------------------
@@ -523,6 +522,7 @@ int main(int argc, const char* argv[])
 
 	//end time
 	auto t3 = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::milli> memory_milliseconds = t2 - t1;
 	std::chrono::duration<double, std::milli> milliseconds = t3 - t2;
 	printf("Kernel Processing time: %f (ms)\n", milliseconds);
 
