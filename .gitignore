@@ -246,3 +246,6 @@ ModelManifest.xml
 
 # generated matlab files
 matlab/*/
+
+# ignore timing results
+timings/
