@@ -1,6 +1,12 @@
+//whether to use OpenMP
+#define OMP
+
 #include "ClpSimplex.hpp"
 #include "../LP/FileIO.h"
 #include <chrono>
+#ifdef OMP
+#include <omp.h>
+#endif
 
 int main(int argc, const char *argv[])
 {
@@ -31,10 +37,15 @@ int main(int argc, const char *argv[])
 	//------------------------------------------
 	//initialize memory initialsation timings
 	auto t1 = std::chrono::high_resolution_clock::now();
-	for (unsigned int n = 0; n < batches; n++) {
+#ifdef OMP
+#pragma omp parallel for
+#endif
+	for (int n = 0; n < batches; n++) {
 
-		model.primal();
-		//model.dual();
+		ClpSimplex  model_batch = model;
+
+		model_batch.primal();
+		//model_batch.dual();
 
 	}
 
@@ -46,7 +57,11 @@ int main(int argc, const char *argv[])
 
 	//------------------------------------------
 	//write timing to file
-	writeTimingtoFile("timings/CLP.txt", size, batches, fp_ms.count());
+#ifdef OMP
+	//writeTimingtoFile("timings/CLP_OMP.txt", size, batches, fp_ms.count());
+#else
+	//writeTimingtoFile("timings/CLP.txt", size, batches, fp_ms.count());
+#endif
 
 
 	return 0;
