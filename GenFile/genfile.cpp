@@ -46,7 +46,6 @@ void generateRandomLP2D(int dimension, math::matrix<double>& A, std::vector<doub
 		//We are assuming that LP is in the form A<=b
 		A.resize(dimension, 2);
 		b.resize(dimension);
-		printf("Ho...\n");
 
 		for (unsigned int j = 0; j < dimension; j++) {
 			for (unsigned int k = 0; k < 2; k++) {
@@ -71,7 +70,6 @@ void generateRandomLP2D(int dimension, math::matrix<double>& A, std::vector<doub
 		lp.setConstraints(A, b, 1);
 		status = lp.TestConstraints(); //The objective function is all set ot zero. //std::cout << "Status = " << status << "\n";
 	}
-	printf("There...\n");
 
 	/*
 	* Experimental Note:
