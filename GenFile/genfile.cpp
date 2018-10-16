@@ -29,7 +29,7 @@
 #include <omp.h>
 #endif
 
-
+/*Taken From Gurung and Ray*/
 void generateRandomLP2D(int dimension, math::matrix<double>& A, std::vector<double>& b, std::vector<double>& c, unsigned int& MaxMinFlag) {
 	unsigned int status = 0, res1 = 0, res2 = 0;
 	// *************************************************************************************************************************************
@@ -103,6 +103,7 @@ void WriteToFile(int dimension, math::matrix<double> A, std::vector<double> b, s
 		printf("Error opening file for writing\n");
 		return;
 	}
+	fprintf(f, "%i 2\n", dimension);
 	for (int i = 0; i < dimension; i++) {
 		fprintf(f, "%f %f\n", A(i, 0), A(i, 1));
 	}
