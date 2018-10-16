@@ -1,6 +1,13 @@
 project(CPLEX CXX)
 
 ################################################################################
+# Library Location
+################################################################################
+set(CPLEX_DIR "" CACHE PATH "Path to CPLEX root directory, contains cplex and concert as sub directories")
+set(CPLEX_CPLEX_LIB "" CACHE PATH "Path to CPLEX lib directory, contains library files within")
+set(CPLEX_CONCERT_LIB "" CACHE PATH "Path to CPLEX lib directory, contains library files within")
+
+################################################################################
 # Source groups
 ################################################################################
 set(Header_Files
@@ -42,8 +49,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${TARGET_NAME})
 ################################################################################
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
     string(CONCAT OUT_DIR
-          $<$<CONFIG:Debug>:${CMAKE_CURRENT_SOURCE_DIR}/>
-        $<$<CONFIG:Release>:${CMAKE_CURRENT_SOURCE_DIR}/>
+          $<$<CONFIG:Debug>:${CMAKE_SOURCE_DIR}/${CMAKE_VS_PLATFORM_NAME}/$<CONFIG>/>
+        $<$<CONFIG:Release>:${CMAKE_SOURCE_DIR}/${CMAKE_VS_PLATFORM_NAME}/$<CONFIG>/>
         $<$<NOT:$<OR:$<CONFIG:Debug>,$<CONFIG:Release>>>:${CMAKE_SOURCE_DIR}/${CMAKE_VS_PLATFORM_NAME}/$<CONFIG>>
     )
 endif()
@@ -54,8 +61,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OUT_
 ################################################################################
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
     target_include_directories(${PROJECT_NAME} PUBLIC
-          $<$<CONFIG:Debug>:$ENV{CPLEX_STUDIO_DIR1271}/cplex/include;$ENV{CPLEX_STUDIO_DIR1271}/concert/include;${CMAKE_SOURCE_DIR}/include;$ENV{CUDA_PATH}/include>
-        $<$<CONFIG:Release>:$ENV{CPLEX_STUDIO_DIR1271}/cplex/include;$ENV{CPLEX_STUDIO_DIR1271}/concert/include;${CMAKE_SOURCE_DIR}/include;$ENV{CUDA_PATH}/include>
+          $<$<CONFIG:Debug>:${CPLEX_DIR}/cplex/include;${CPLEX_DIR}/concert/include;${CMAKE_SOURCE_DIR}/include;$ENV{CUDA_PATH}/include>
+        $<$<CONFIG:Release>:${CPLEX_DIR}/cplex/include;${CPLEX_DIR}/concert/include;${CMAKE_SOURCE_DIR}/include;$ENV{CUDA_PATH}/include>
     )
 endif()
 
@@ -90,15 +97,22 @@ endif()
 ################################################################################
 # Link with other additional libraries.
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+  if(MSVC)
     target_link_libraries(${PROJECT_NAME}
           $<$<CONFIG:Debug>:cudart$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/cplex/lib/x64_windows_vs2015/stat_mdd/cplex1271$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/cplex/lib/x64_windows_vs2015/stat_mdd/ilocplex$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/concert/lib/x64_windows_vs2015/stat_mdd/concert>
         $<$<CONFIG:Release>:cudart$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/cplex/lib/x64_windows_vs2015/stat_mda/cplex1271$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/cplex/lib/x64_windows_vs2015/stat_mda/ilocplex$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/concert/lib/x64_windows_vs2015/stat_mda/concert>
     )
+    else()
+      target_link_libraries(${PROJECT_NAME}
+          $<$<CONFIG:Debug>:cudart$<SEMICOLON>cplex$<SEMICOLON>ilocplex$<SEMICOLON>concert$<SEMICOLON>m$<SEMICOLON>pthread>
+        $<$<CONFIG:Release>:cudart$<SEMICOLON>cplex$<SEMICOLON>ilocplex$<SEMICOLON>concert$<SEMICOLON>m$<SEMICOLON>pthread>
+        )
+  endif()
 endif()
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
     target_link_directories(${PROJECT_NAME}
-        CONDITION   $<CONFIG:Debug> "$ENV{CUDA_PATH}/lib/x64"
-        CONDITION $<CONFIG:Release> "$ENV{CUDA_PATH}/lib/x64"
+        CONDITION   $<CONFIG:Debug> "$ENV{CUDA_PATH}/lib/x64" "${CPLEX_CPLEX_LIB}" "${CPLEX_CONCERT_LIB}"
+        CONDITION $<CONFIG:Release> "$ENV{CUDA_PATH}/lib/x64" "${CPLEX_CPLEX_LIB}" "${CPLEX_CONCERT_LIB}"
     )
 endif()
 
