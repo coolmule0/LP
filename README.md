@@ -1,5 +1,36 @@
 # Random Batch LP Solver
 
+This branch is for running the comparison tests from the paper "Two-Dimensional Batch Linear Programming on the GPU"
+
+## How to build
+
+### CMAKE
+
+Ensure the configuration is set for x64 architecture. Different sub-projects have different dependencies. In total these are BOOST, CLP and GLPK.
+
+Ensure you set relevant CUDA compute version by setting the flag e.g. `CMAKE_CUDA_FLAGS=-arch=sm_52`. This sets it to compute 52. Requirement is at least 30. Please ensure the computer this is running on has a supported GPU.
+
+BOOST: set the flags `BOOST_INC` and `BOOST_LIB` to the boost source directory (containing boost/boost.h as a sub file) and to the boost library directory respectively.
+
+Ensure release mode is built by setting flag `CMAKE_BUILD_TYPE=Release`
+
+Set CLP_DIR and CLP_LIB to the root folder and lib folder of a CLP installation.
+
+On windows, ensure CudaToolkitBinDir is an environmental variable so runtime .dll's can be passed to the generated executable location. Failing this, manually copy cudart.dll to the executable location.
+
+
+
+
+
+## How to run
+
+A bash .sh script is included in the base directory, called "ReproduceResults.sh", which runs all the executables over a variety of problem and batch sizes. Results are written to the "timings" directory. 
+
+These timings can be coalesced into a graph using the Matlab script found in the "matlab" subdirectory.
+
+
+
+
 This is a batch linear program solver for Nvidia GPUs. Works for GPUs greater than compute 2.1 (i.e. newer than Fermi architecture). Include glm library.
 
 ## How to build
