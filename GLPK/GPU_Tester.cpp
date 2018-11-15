@@ -18,11 +18,6 @@
 #else
 #include "boost/timer/timer.hpp"
 #endif
-#ifdef WIN32
-	
-#else
-	#include "sys/time.h"
-#endif
 #include "parseBenchmark.h"
 
 #ifdef OMP
