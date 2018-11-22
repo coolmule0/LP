@@ -14,11 +14,11 @@ BOOST: set the flags `BOOST_INC` and `BOOST_LIB` to the boost source directory (
 
 CLP: set `CLP_INC` to include directory, containing coin/CLPSimplex.hpp as a subfile. Set `CLP_LIB` to the folder containing CLP library files.
 
+CPLEX: set `CPLEX_DIR` to the root directory of CPLEX, which contains subfolders cplex, concert. `CPLEX_CONCERT_LIB` to folder containing concert library file. `CPLEX_CPLEX_LIB` to folder containing cplex library file. Might need to rename cplexXXXX library file to simply cplex. E.g. cplex1271.lib to cplex.lib.
+
 GLPK: set flags `GLPK_INC` to GLPK source / src folder. `GLPK_LIB` to the GLPK library / w64 folder.
 
-Ensure release mode is built by setting flag `CMAKE_BUILD_TYPE=Release`
-
-On windows, ensure CudaToolkitBinDir is an environmental variable so runtime .dll's can be passed to the generated executable location. Failing this, manually copy cudart.dll to the executable location.
+Ensure release mode is built by setting flag `CMAKE_BUILD_TYPE=Release` or using Release mode when building using Visual Studio, Make, e.t.c.
 
 Successful setting of CMAKE flags will generate the appropriate MAKE file/Visual Studio .sln (e.t.c.). Building this will generate the executables.
 

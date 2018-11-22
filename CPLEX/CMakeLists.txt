@@ -6,6 +6,7 @@ project(CPLEX CXX)
 set(CPLEX_DIR "" CACHE PATH "Path to CPLEX root directory, contains cplex and concert as sub directories")
 set(CPLEX_CPLEX_LIB "" CACHE PATH "Path to CPLEX lib directory, contains library files within")
 set(CPLEX_CONCERT_LIB "" CACHE PATH "Path to CPLEX lib directory, contains library files within")
+set(CPLEX_VERSION "" CACHE bool "Version number of CPLEX, e.g. 1271")
 
 ################################################################################
 # Source groups
@@ -99,20 +100,20 @@ endif()
 if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
   if(MSVC)
     target_link_libraries(${PROJECT_NAME}
-          $<$<CONFIG:Debug>:cudart$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/cplex/lib/x64_windows_vs2015/stat_mdd/cplex1271$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/cplex/lib/x64_windows_vs2015/stat_mdd/ilocplex$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/concert/lib/x64_windows_vs2015/stat_mdd/concert>
-        $<$<CONFIG:Release>:cudart$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/cplex/lib/x64_windows_vs2015/stat_mda/cplex1271$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/cplex/lib/x64_windows_vs2015/stat_mda/ilocplex$<SEMICOLON>$(CPLEX_STUDIO_DIR1271)/concert/lib/x64_windows_vs2015/stat_mda/concert>
+          $<$<CONFIG:Debug>:${CPLEX_CPLEX_LIB}/cplex.lib$<SEMICOLON>${CPLEX_CPLEX_LIB}/ilocplex.lib$<SEMICOLON>${CPLEX_CONCERT_LIB}/concert.lib>
+        $<$<CONFIG:Release>:${CPLEX_CPLEX_LIB}/cplex.lib$<SEMICOLON>${CPLEX_CPLEX_LIB}/ilocplex.lib$<SEMICOLON>${CPLEX_CONCERT_LIB}/concert.lib>
     )
     else()
       target_link_libraries(${PROJECT_NAME}
-          $<$<CONFIG:Debug>:cudart$<SEMICOLON>cplex$<SEMICOLON>ilocplex$<SEMICOLON>concert$<SEMICOLON>m$<SEMICOLON>pthread>
-        $<$<CONFIG:Release>:cudart$<SEMICOLON>cplex$<SEMICOLON>ilocplex$<SEMICOLON>concert$<SEMICOLON>m$<SEMICOLON>pthread>
-        )
+          $<$<CONFIG:Debug>:${CPLEX_CPLEX_LIB}/cplex${CPLEX_VERSION}$<SEMICOLON>${CPLEX_CPLEX_LIB}/ilocplex$<SEMICOLON>${CPLEX_CONCERT_LIB}/concert>
+        $<$<CONFIG:Release>:${CPLEX_CPLEX_LIB}/cplex${CPLEX_VERSION}$<SEMICOLON>${CPLEX_CPLEX_LIB}/ilocplex$<SEMICOLON>${CPLEX_CONCERT_LIB}/concert>
+    )
   endif()
 endif()
-if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-    target_link_directories(${PROJECT_NAME}
-        CONDITION   $<CONFIG:Debug> "$ENV{CUDA_PATH}/lib/x64" "${CPLEX_CPLEX_LIB}" "${CPLEX_CONCERT_LIB}"
-        CONDITION $<CONFIG:Release> "$ENV{CUDA_PATH}/lib/x64" "${CPLEX_CPLEX_LIB}" "${CPLEX_CONCERT_LIB}"
-    )
-endif()
+#if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+#    target_link_directories(${PROJECT_NAME}
+#        CONDITION   $<CONFIG:Debug> "${CPLEX_CPLEX_LIB}" "${CPLEX_CONCERT_LIB}"
+#        CONDITION $<CONFIG:Release> "${CPLEX_CPLEX_LIB}" "${CPLEX_CONCERT_LIB}"
+#    )
+#endif()
 

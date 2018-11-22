@@ -10,11 +10,11 @@ function LPtimingScript()
     close all;
     
     set = [1,2,4,5, 9];
-%     PlotCutthrough(timing, timingstd, size, batch, Title, true, 4, set, 10^2, 2*10^5, 1, inf)
-%     PlotCutthrough(timing, timingstd, size, batch, Title, true, 8, set, 10^2, 2*10^5, 1, inf)
-%     PlotCutthrough(timing, timingstd, size, batch, Title, true, 11, set, 10^2, 2*10^5, 1, inf)
-%     PlotCutthrough(timing, timingstd, size, batch, Title, false, 3, set, 10^2, 2*10^5, 1, inf)
-%     PlotCutthrough(timing, timingstd, size, batch, Title, false, 10, [1,2], 10^2, 2*10^5, 1, inf)
+    PlotCutthrough(timing, timingstd, size, batch, Title, true, 4, set, 10^2, 2*10^5, 1, inf)
+    PlotCutthrough(timing, timingstd, size, batch, Title, true, 8, set, 10^2, 2*10^5, 1, inf)
+    PlotCutthrough(timing, timingstd, size, batch, Title, true, 11, set, 10^2, 2*10^5, 1, inf)
+    PlotCutthrough(timing, timingstd, size, batch, Title, false, 3, set, 10^2, 2*10^5, 1, inf)
+    PlotCutthrough(timing, timingstd, size, batch, Title, false, 10, [1,2], 10^2, 2*10^5, 1, inf)
 
 %     PlotCutthrough(timing, timingstd, size, batch, Title, false, 10, set, 10^2, 2*10^5, 1, inf)
 %     PlotSurf(timing{7}./(timing{7}+timing{8}),size{7},batch{7}, "Proportional amount of time spent transfering memory")
@@ -61,41 +61,33 @@ function [timing, timingstd, size, batch, Title] = ReadInValues()
 %           array Title, the legend names of the different results
 
     %Editable variables
-    %RGBLP timing file
-    RGBTiming="D:\Users\John\Documents\MATLAB\RGBstuff\RGB/timingsNew.txt";
     %Gurung and Ray timing file
-    BLPKTiming="D:\Users\John\Documents\MATLAB\RGBstuff\SimplexGPU/BLPG_GPU_timing.txt";
-    GRTiming="D:\Users\John\Documents\GitHub\LP\timings\GRtimings.txt";
-    %GLPK timing file
-    CPUTiming="D:\Users\John\Documents\MATLAB\RGBstuff\SimplexCPU/BLPG_CPU_OMP_timing.txt";
-    %Old RGB timing file 
-    OldRGBTiming="D:\Users\John\Documents\MATLAB\RGBstuff\RGB/timingsOld.txt";
-    %New RGB timing file without memory copy
-    NewRGBTimingComp="D:\Users\John\Documents\MATLAB\RGBstuff\RGB/timingsNewComp.txt";
-    %Old RGB timing file without memory copy
-    OldRGBTimingComp="D:\Users\John\Documents\MATLAB\RGBstuff\RGB/timingsOldComp.txt";
+    GRTiming="..\timings\GRtimings.txt";
     %RGB timing
-    RGBTiming="D:\Users\John\Documents\GitHub\LP\timings\RGBtimings.txt";
+    RGBTiming="..\timings\RGBtimings.txt";
     %CPLEX timing with my code
-    CPLEXTimingMe="D:\Users\John\Documents\GitHub\LP\timings\CPLEXtimings.txt";
+    CPLEXTimingMe="..\timings\CPLEXtimings.txt";
     %CPLEX timing with mps file
-    CPLEXTimingMPS="D:\Users\John\Documents\GitHub\LP\timings\CPLEXtimingsMPS.txt";
+    CPLEXTimingMPS="..\timings\CPLEXtimingsMPS.txt";
     %mGLPK timing file
-    mGLPKTiming="D:\Users\John\Documents\GitHub\LP\timings\GLPK_OMPtimings.txt";
+    mGLPKTiming="..\timings\GLPK_OMPtimings.txt";
     %GLPK timing file
-    GLPKTiming="D:\Users\John\Documents\GitHub\LP\timings\GLPKtimings.txt";
+    GLPKTiming="..\timings\GLPKtimings.txt";
     %RGB memory transfer time
-    RGBMem = "D:\Users\John\Documents\GitHub\LP\timings\RGBMemtimings.txt";
+    RGBMem = "..\timings\RGBMemtimings.txt";
     %RGB solving time (without memory transfer)
-    RGBComp = "D:\Users\John\Documents\GitHub\LP\timings\RGBCalctimings.txt";
+    RGBComp = "..\timings\RGBCalctimings.txt";
     %CLP timing
-    CLP = "D:\Users\John\Documents\GitHub\LP\timings\CLP.txt";
+    CLP = "..\timings\CLP.txt";
 
     Title=[     "RGB",      "Gurung and Ray",   "GLPK",     "mGLPK",        "CLPEX",      "CPLEXmps",       "RGBMem",   "RGBComp",  "CLP"      ];
-    TimeLoc=[   RGBTiming,  BLPKTiming,         GLPKTiming, mGLPKTiming,    CPLEXTimingMe,CPLEXTimingMPS,   RGBMem,     RGBComp,    CLP  ];
+    TimeLoc=[   RGBTiming,  GRTiming,         GLPKTiming, mGLPKTiming,    CPLEXTimingMe,CPLEXTimingMPS,   RGBMem,     RGBComp,    CLP  ];
    
     for g = 1:length(TimeLoc)
-
+        if ~ isfile(TimeLoc(g))
+            fprintf("Cannot find file %s\n", TimeLoc(g));
+            continue;
+        end
         fid=fopen(TimeLoc(g),'r');
         sizeA = [3 Inf];
         A=fscanf(fid, '%i %i %f', sizeA);

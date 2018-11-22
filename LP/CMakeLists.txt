@@ -94,19 +94,19 @@ endif()
 ################################################################################
 # Post build events
 ################################################################################
-if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
-    if(MSVC)
-        add_custom_command_if(
-            TARGET ${PROJECT_NAME}
-            POST_BUILD
-            COMMANDS
-            COMMAND   $<CONFIG:Debug> echo copy "$ENV{CudaToolkitBinDir}\\cudart*.dll" "$<SHELL_PATH:${OUT_DIR}>"
-            COMMAND   $<CONFIG:Debug> copy "$ENV{CudaToolkitBinDir}\\cudart*.dll" "$<SHELL_PATH:${OUT_DIR}>"
-            COMMAND $<CONFIG:Release> echo copy "$ENV{CudaToolkitBinDir}\\cudart*.dll" "$<SHELL_PATH:${OUT_DIR}>"
-            COMMAND $<CONFIG:Release> copy "$ENV{CudaToolkitBinDir}\\cudart*.dll" "$<SHELL_PATH:${OUT_DIR}>"
-        )
-    endif()
-endif()
+#if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+#    if(MSVC)
+#        add_custom_command_if(
+#            TARGET ${PROJECT_NAME}
+#            POST_BUILD
+#            COMMANDS
+#            COMMAND   $<CONFIG:Debug> echo copy "$ENV{CudaToolkitBinDir}\\cudart*.dll" "$<SHELL_PATH:${OUT_DIR}>"
+#            COMMAND   $<CONFIG:Debug> copy "$ENV{CudaToolkitBinDir}\\cudart*.dll" "$<SHELL_PATH:${OUT_DIR}>"
+#            COMMAND $<CONFIG:Release> echo copy "$ENV{CudaToolkitBinDir}\\cudart*.dll" "$<SHELL_PATH:${OUT_DIR}>"
+#            COMMAND $<CONFIG:Release> copy "$ENV{CudaToolkitBinDir}\\cudart*.dll" "$<SHELL_PATH:${OUT_DIR}>"
+#        )
+#    endif()
+#endif()
 
 ################################################################################
 # Dependencies
@@ -118,3 +118,12 @@ endif()
 #        $<$<CONFIG:Release>:>
 #    )
 #endif()
+
+################################################################################
+# Working directory
+################################################################################
+if(MSVC)
+    if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+        set_target_properties(${PROJECT_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+    endif()
+endif()
